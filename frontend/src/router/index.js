@@ -9,6 +9,7 @@ import RouteManagement from '../views/RouteManagement.vue'
 import TourGroupManagement from '../views/TourGroupManagement.vue'
 import ConfirmationPrint from '../views/ConfirmationPrint.vue'
 import DailyExport from '../views/DailyExport.vue'
+import AuditLogs from '../views/AuditLogs.vue'
 
 const routes = [
   { path: '/', name: 'Login', component: Login },
@@ -20,7 +21,8 @@ const routes = [
   { path: '/routes', name: 'RouteManagement', component: RouteManagement },
   { path: '/tour-group-management', name: 'TourGroupManagement', component: TourGroupManagement },
   { path: '/confirmations', name: 'ConfirmationPrint', component: ConfirmationPrint },
-  { path: '/daily-export', name: 'DailyExport', component: DailyExport }
+  { path: '/daily-export', name: 'DailyExport', component: DailyExport },
+  { path: '/audit-logs', name: 'AuditLogs', component: AuditLogs }
 ]
 
 const router = createRouter({

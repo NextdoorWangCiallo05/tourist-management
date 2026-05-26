@@ -112,6 +112,12 @@ const handleLogin = async () => {
   try {
     const res = await axios.post('/api/login', form.value)
     localStorage.setItem('token', res.data.access_token)
+    if (res.data.display_name) {
+      localStorage.setItem('displayName', res.data.display_name)
+    }
+    if (res.data.role) {
+      localStorage.setItem('role', res.data.role)
+    }
     if (remember.value) {
       localStorage.setItem('rememberedUser', form.value.username)
     } else {

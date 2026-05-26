@@ -68,6 +68,9 @@ class Participant(db.Model):
     name = db.Column(db.String(100), nullable=False)
     gender = db.Column(db.String(10))
     birth_date = db.Column(db.Date)
+    id_type = db.Column(db.String(20), default='身份证')
+    id_number = db.Column(db.String(50))
+    is_adult = db.Column(db.Boolean, default=True)
     phone_number = db.Column(db.String(20))
     address = db.Column(db.String(200))
     email = db.Column(db.String(100))
@@ -80,6 +83,16 @@ class Participant(db.Model):
     status = db.Column(db.String(20), default='active')
     
     application = db.relationship('Application', backref=db.backref('participants', lazy=True))
+
+
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    display_name = db.Column(db.String(50), default='操作员')
+    role = db.Column(db.String(20), default='operator')
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
 class RouteHistory(db.Model):
     __tablename__ = 'route_history'
@@ -110,3 +123,14 @@ class SystemConfig(db.Model):
     config_key = db.Column(db.String(50), unique=True, nullable=False)
     config_value = db.Column(db.String(200), nullable=False)
     description = db.Column(db.String(200))
+
+
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), nullable=False)
+    action = db.Column(db.String(100), nullable=False)
+    target_type = db.Column(db.String(50))
+    target_id = db.Column(db.String(50))
+    detail = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime, default=datetime.now)

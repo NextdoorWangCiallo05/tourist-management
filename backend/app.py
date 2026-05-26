@@ -3,9 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_cors import CORS
 from datetime import datetime, timedelta
-from models import db, Route, TourGroup, Application, Participant, PaymentRecord, PriceHistory, RouteHistory
+from models import db, Route, TourGroup, Application, Participant, PaymentRecord, PriceHistory, RouteHistory, User, AuditLog
+from werkzeug.security import generate_password_hash, check_password_hash
 import random
 import string
+import csv
+import io
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
@@ -39,24 +42,52 @@ def calculate_cancellation_fee(days_before_departure, total_amount):
     else:
         return total_amount
 
+def log_audit(action, target_type=None, target_id=None, detail=None):
+    from flask_jwt_extended import get_jwt_identity
+    try:
+        username = get_jwt_identity()
+    except:
+        username = 'system'
+    log = AuditLog(username=username, action=action, target_type=target_type, target_id=target_id, detail=detail)
+    db.session.add(log)
+    db.session.commit()
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
     
-    if username == 'admin' and password == 'admin123':
+    user = User.query.filter_by(username=username).first()
+    if user and check_password_hash(user.password_hash, password):
         access_token = create_access_token(identity=username)
-        return jsonify(access_token=access_token), 200
+        log_audit('登录系统', 'user', username, f'用户 {username} 登录成功')
+        return jsonify(
+            access_token=access_token,
+            display_name=user.display_name,
+            role=user.role
+        ), 200
+    log_audit('登录失败', 'user', username, f'用户 {username} 登录失败')
     return jsonify({"msg": "Invalid username or password"}), 401
 
 @app.route('/api/tour_groups', methods=['GET'])
 @jwt_required()
 def get_tour_groups():
     groups = TourGroup.query.filter_by(is_public=True).all()
+    today = datetime.now().date()
     result = []
     for group in groups:
         route = Route.query.get(group.route_id)
+        total_participants = 0
+        applications = Application.query.filter(
+            Application.tour_group_id == group.id,
+            Application.status.in_(['pending', 'completed'])
+        ).all()
+        for app in applications:
+            total_participants += app.adult_count + app.child_count
+        remaining_capacity = max(0, group.max_capacity - total_participants)
+        days_before_departure = (group.departure_date - today).days
+        deposit_rate = calculate_deposit_rate(days_before_departure)
         result.append({
             'id': group.id,
             'group_code': group.group_code,
@@ -65,9 +96,11 @@ def get_tour_groups():
             'departure_date': group.departure_date.strftime('%Y-%m-%d'),
             'deadline_date': group.deadline_date.strftime('%Y-%m-%d'),
             'max_capacity': group.max_capacity,
+            'remaining_capacity': remaining_capacity,
             'adult_price': group.adult_price,
             'child_price': group.child_price,
-            'discount_rate': group.discount_rate
+            'discount_rate': group.discount_rate,
+            'deposit_rate': deposit_rate
         })
     return jsonify(result), 200
 
@@ -83,7 +116,10 @@ def check_availability(group_id):
         return jsonify({"available": False, "reason": "已过截止日期"}), 200
     
     total_participants = 0
-    applications = Application.query.filter_by(tour_group_id=group_id, status='completed').all()
+    applications = Application.query.filter(
+        Application.tour_group_id == group_id,
+        Application.status.in_(['pending', 'completed'])
+    ).all()
     for app in applications:
         total_participants += app.adult_count + app.child_count
     
@@ -111,7 +147,7 @@ def create_application():
     
     deposit_rate = calculate_deposit_rate(days_before_departure)
     total_price = adult_count * group.adult_price + child_count * group.child_price
-    deposit_amount = total_price * deposit_rate
+    deposit_amount = round(total_price * deposit_rate, 2)
     
     application_no = generate_application_no()
     
@@ -123,11 +159,13 @@ def create_application():
         adult_count=adult_count,
         child_count=child_count,
         deposit_amount=deposit_amount,
-        balance_amount=total_price - deposit_amount,
+        balance_amount=round(total_price - deposit_amount, 2),
         status='pending'
     )
     db.session.add(app)
     db.session.commit()
+    
+    log_audit('新建申请', 'application', application_no, f'申请编号 {application_no}，订金 {deposit_amount}')
     
     return jsonify({
         'application_no': application_no,
@@ -161,6 +199,8 @@ def pay_deposit(app_no):
         db.session.add(payment)
         db.session.commit()
         
+        log_audit('支付订金', 'application', app_no, f'申请 {app_no} 支付订金 {amount_paid}')
+        
         return jsonify({"success": True, "message": "订金支付成功"}), 200
     else:
         return jsonify({"error": "支付金额不足"}), 400
@@ -181,7 +221,10 @@ def add_participants(app_no):
             name=p_data['name'],
             gender=p_data.get('gender'),
             birth_date=datetime.strptime(p_data['birth_date'], '%Y-%m-%d').date() if p_data.get('birth_date') else None,
-            phone_number=p_data.get('phone_number'),
+            id_type=p_data.get('id_type', '身份证'),
+            id_number=p_data.get('id_number'),
+            is_adult=p_data.get('is_adult', True),
+            phone_number=p_data.get('phone_number') or p_data.get('phone'),
             address=p_data.get('address'),
             email=p_data.get('email'),
             postal_code=p_data.get('postal_code'),
@@ -225,6 +268,8 @@ def complete_application(app_no):
     app.balance_due_date = balance_due_date
     db.session.commit()
     
+    log_audit('完成申请', 'application', app_no, f'申请 {app_no} 已完成')
+    
     return jsonify({
         "success": True,
         "message": "申请完成",
@@ -255,6 +300,8 @@ def pay_balance(app_no):
         db.session.add(payment)
         db.session.commit()
         
+        log_audit('支付余款', 'application', app_no, f'申请 {app_no} 支付余款 {amount_paid}')
+        
         return jsonify({"success": True, "message": "余款支付成功"}), 200
     else:
         return jsonify({"error": "支付金额不足"}), 400
@@ -279,12 +326,14 @@ def cancel_application(app_no):
     if app.balance_paid:
         total_paid += app.balance_amount
     
-    cancellation_fee = calculate_cancellation_fee(days_before_departure, total_paid)
-    refund_amount = total_paid - cancellation_fee
+    cancellation_fee = round(calculate_cancellation_fee(days_before_departure, total_paid), 2)
+    refund_amount = round(total_paid - cancellation_fee, 2)
     
     app.status = 'cancelled'
     app.cancelled_at = datetime.now()
     db.session.commit()
+    
+    log_audit('取消申请', 'application', app_no, f'申请 {app_no} 已取消，退款 {refund_amount}')
     
     return jsonify({
         "success": True,
@@ -311,12 +360,19 @@ def get_application(app_no):
             'name': p.name,
             'gender': p.gender,
             'birth_date': p.birth_date.strftime('%Y-%m-%d') if p.birth_date else None,
+            'id_type': p.id_type,
+            'id_number': p.id_number,
+            'is_adult': p.is_adult,
+            'phone': p.phone_number,
             'phone_number': p.phone_number,
             'address': p.address,
             'email': p.email,
             'is_responsible': p.is_responsible,
             'status': p.status
         })
+    
+    total_amount = app.adult_count * group.adult_price + app.child_count * group.child_price
+    deposit_due_date = group.deadline_date.strftime('%Y-%m-%d') if group.deadline_date else None
     
     return jsonify({
         'id': app.id,
@@ -328,12 +384,17 @@ def get_application(app_no):
         'responsible_phone': app.responsible_phone,
         'adult_count': app.adult_count,
         'child_count': app.child_count,
+        'adult_price': group.adult_price,
+        'child_price': group.child_price,
+        'total_amount': total_amount,
         'deposit_amount': app.deposit_amount,
         'deposit_paid': app.deposit_paid,
+        'deposit_due_date': deposit_due_date,
         'balance_amount': app.balance_amount,
         'balance_paid': app.balance_paid,
         'balance_due_date': app.balance_due_date.strftime('%Y-%m-%d') if app.balance_due_date else None,
         'status': app.status,
+        'created_at': app.created_at.strftime('%Y-%m-%d %H:%M') if app.created_at else None,
         'participants': participant_list
     }), 200
 
@@ -662,9 +723,13 @@ def cancel_participant(participant_id):
 @app.route('/api/daily_export', methods=['GET'])
 @jwt_required()
 def daily_export():
-    yesterday = datetime.now().date() - timedelta(days=1)
-    start_time = datetime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0)
-    end_time = datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59)
+    date_str = request.args.get('date')
+    if date_str:
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    else:
+        target_date = datetime.now().date()
+    start_time = datetime(target_date.year, target_date.month, target_date.day, 0, 0, 0)
+    end_time = datetime(target_date.year, target_date.month, target_date.day, 23, 59, 59)
     
     payments = PaymentRecord.query.filter(
         PaymentRecord.paid_at >= start_time,
@@ -693,9 +758,13 @@ def daily_export():
 @app.route('/api/confirmations', methods=['GET'])
 @jwt_required()
 def get_confirmations():
-    yesterday = datetime.now().date() - timedelta(days=1)
-    start_time = datetime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0)
-    end_time = datetime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59)
+    date_str = request.args.get('date')
+    if date_str:
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    else:
+        target_date = datetime.now().date()
+    start_time = datetime(target_date.year, target_date.month, target_date.day, 0, 0, 0)
+    end_time = datetime(target_date.year, target_date.month, target_date.day, 23, 59, 59)
     
     applications = Application.query.filter(
         Application.status == 'completed',
@@ -726,7 +795,134 @@ def get_confirmations():
     
     return jsonify(result), 200
 
+
+@app.route('/api/stats', methods=['GET'])
+@jwt_required()
+def get_stats():
+    today = datetime.now().date()
+    week_ago = today - timedelta(days=7)
+    
+    total_apps = Application.query.count()
+    total_groups = TourGroup.query.count()
+    total_routes = Route.query.count()
+    total_participants = Participant.query.count()
+    
+    today_apps = Application.query.filter(db.func.date(Application.created_at) == today).count()
+    
+    status_distribution = db.session.query(
+        Application.status, db.func.count(Application.id)
+    ).group_by(Application.status).all()
+    
+    daily_trend = db.session.query(
+        db.func.date(Application.created_at).label('date'),
+        db.func.count(Application.id)
+    ).filter(Application.created_at >= week_ago).group_by(
+        db.func.date(Application.created_at)
+    ).order_by(db.func.date(Application.created_at)).all()
+    
+    payment_total = db.session.query(db.func.sum(PaymentRecord.amount)).scalar() or 0
+    
+    return jsonify({
+        'total_applications': total_apps,
+        'total_groups': total_groups,
+        'total_routes': total_routes,
+        'total_participants': total_participants,
+        'today_applications': today_apps,
+        'today_payments': payment_total,
+        'status_distribution': [{'name': s, 'value': c} for s, c in status_distribution],
+        'daily_trend': [{'date': str(d), 'count': c} for d, c in daily_trend]
+    }), 200
+
+
+@app.route('/api/routes/<int:route_id>/activate', methods=['POST'])
+@jwt_required()
+def activate_route(route_id):
+    route = Route.query.get(route_id)
+    if not route:
+        return jsonify({"error": "Route not found"}), 404
+    
+    route.is_active = True
+    db.session.commit()
+    
+    log_audit('启用路线', 'route', str(route_id), f'路线 {route.route_name} 已启用')
+    
+    return jsonify({"success": True, "message": "路线已启用"}), 200
+
+
+@app.route('/api/applications/<string:app_no>/participants/import', methods=['POST'])
+@jwt_required()
+def import_participants(app_no):
+    app = Application.query.filter_by(application_no=app_no).first()
+    if not app:
+        return jsonify({"error": "Application not found"}), 404
+    
+    file = request.files.get('file')
+    if not file:
+        return jsonify({"error": "请上传文件"}), 400
+    
+    content = file.read().decode('utf-8-sig')
+    reader = csv.DictReader(io.StringIO(content))
+    
+    count = 0
+    for row in reader:
+        participant = Participant(
+            application_id=app.id,
+            name=row.get('姓名', ''),
+            id_type=row.get('证件类型', '身份证'),
+            id_number=row.get('证件号码', ''),
+            is_adult=row.get('类型', '成人') == '成人',
+            phone_number=row.get('联系电话', ''),
+            gender=row.get('性别', ''),
+            address=row.get('地址', '')
+        )
+        db.session.add(participant)
+        count += 1
+    
+    db.session.commit()
+    log_audit('批量导入', 'application', app_no, f'申请 {app_no} 批量导入 {count} 名参加者')
+    
+    return jsonify({"success": True, "count": count, "message": f"成功导入 {count} 名参加者"}), 201
+
+
+@app.route('/api/audit_logs', methods=['GET'])
+@jwt_required()
+def get_audit_logs():
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 50, type=int)
+    action = request.args.get('action')
+    
+    query = AuditLog.query.order_by(AuditLog.created_at.desc())
+    if action:
+        query = query.filter(AuditLog.action.like(f'%{action}%'))
+    
+    logs = query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    return jsonify({
+        'logs': [{
+            'id': l.id,
+            'username': l.username,
+            'action': l.action,
+            'target_type': l.target_type,
+            'target_id': l.target_id,
+            'detail': l.detail,
+            'created_at': l.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        } for l in logs.items],
+        'total': logs.total,
+        'pages': logs.pages,
+        'page': page
+    }), 200
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        if not User.query.filter_by(username='admin').first():
+            admin = User(
+                username='admin',
+                password_hash=generate_password_hash('admin123'),
+                display_name='王经理',
+                role='admin'
+            )
+            db.session.add(admin)
+            db.session.commit()
     app.run(debug=True, host='0.0.0.0', port=5000)
