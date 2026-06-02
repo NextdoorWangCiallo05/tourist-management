@@ -52,4 +52,11 @@ const currentDate = new Date().toLocaleDateString('zh-CN', {
 .header-right { display: flex; align-items: center; gap: 12px; }
 .date-tag { font-size: 13px; padding: 4px 12px; border-radius: 20px; }
 .content-area { flex: 1; padding: 24px 28px; overflow-y: auto; }
+
+@media (max-width: 768px) {
+  .page .main-container .sidebar { display: none; }
+  .top-header { padding: 0 16px; height: 50px; }
+  .content-area { padding: 16px; }
+  .breadcrumb { font-size: 13px; }
+}
 </style>

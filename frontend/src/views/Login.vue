@@ -93,11 +93,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import request from '../utils/request'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '../stores/user'
 
 const router = useRouter()
+const store = useUserStore()
 const form = ref({ username: '', password: '' })
 const remember = ref(false)
 const loading = ref(false)
@@ -110,14 +112,8 @@ const handleLogin = async () => {
   }
   loading.value = true
   try {
-    const res = await axios.post('/api/login', form.value)
-    localStorage.setItem('token', res.data.access_token)
-    if (res.data.display_name) {
-      localStorage.setItem('displayName', res.data.display_name)
-    }
-    if (res.data.role) {
-      localStorage.setItem('role', res.data.role)
-    }
+    const res = await request.post('/login', form.value)
+    store.setUser(res.access_token, res.display_name, res.role)
     if (remember.value) {
       localStorage.setItem('rememberedUser', form.value.username)
     } else {

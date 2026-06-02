@@ -17,7 +17,17 @@ request.interceptors.request.use(
 )
 
 request.interceptors.response.use(
-  response => response.data,
+  response => {
+    const body = response.data
+    if (body.code !== undefined) {
+      if (body.code === 200 || body.code === 201) {
+        return body.data !== undefined ? body.data : body
+      }
+      ElMessage.error(body.message || '请求失败')
+      return Promise.reject(new Error(body.message))
+    }
+    return body
+  },
   error => {
     if (error.response) {
       const { status, data } = error.response
@@ -26,7 +36,7 @@ request.interceptors.response.use(
         window.location.href = '/'
         return Promise.reject(error)
       }
-      ElMessage.error(data?.error || data?.msg || '请求失败')
+      ElMessage.error(data?.message || data?.error || data?.msg || '请求失败')
     } else {
       ElMessage.error('网络错误，请检查连接')
     }

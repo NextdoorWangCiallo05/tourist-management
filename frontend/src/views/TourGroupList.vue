@@ -175,4 +175,9 @@ onMounted(() => { loadGroups() })
 .apply-info { background: #f8fafc; border-radius: 10px; padding: 16px; }
 .apply-info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; color: #475569; }
 .apply-btn { width: 100%; margin-top: 16px; }
+
+@media (max-width: 768px) {
+  .tour-group-grid { grid-template-columns: 1fr; }
+  .search-box { max-width: 100%; flex-direction: column; }
+}
 </style>

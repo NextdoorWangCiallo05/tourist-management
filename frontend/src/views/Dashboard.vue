@@ -96,6 +96,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '../stores/user'
 import request from '../utils/request'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
@@ -113,8 +114,9 @@ import AppLayout from '../components/AppLayout.vue'
 use([CanvasRenderer, PieChart, LineChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
 const router = useRouter()
+const userStore = useUserStore()
 
-const displayName = computed(() => localStorage.getItem('displayName') || '操作员')
+const displayName = computed(() => userStore.displayName)
 const greeting = computed(() => {
   const hour = new Date().getHours()
   if (hour < 12) return '上午好'
@@ -259,4 +261,11 @@ onMounted(() => { loadStats() })
 }
 .info-item:hover { background: #f1f5f9; }
 .info-text { font-size: 14px; color: #334155; }
+
+@media (max-width: 768px) {
+  .stats-grid, .charts-grid, .content-grid { grid-template-columns: 1fr; }
+  .welcome-banner { flex-direction: column; gap: 16px; text-align: center; }
+  .welcome-stats { gap: 16px; }
+  .quick-actions { grid-template-columns: 1fr; }
+}
 </style>

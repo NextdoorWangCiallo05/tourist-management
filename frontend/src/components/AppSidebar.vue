@@ -63,6 +63,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from '../stores/user'
 import {
   Monitor, Plus, Document, Search, Suitcase, MapLocation,
   Printer, Download, SwitchButton
@@ -70,20 +71,18 @@ import {
 
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
 
 const props = defineProps({
   activeMenu: { type: String, default: 'dashboard' }
 })
 
 const navigate = (path) => { router.push(path) }
-const handleLogout = () => { localStorage.removeItem('token'); router.push('/') }
+const handleLogout = () => { userStore.logout(); router.push('/') }
 
-const displayName = computed(() => localStorage.getItem('displayName') || '操作员')
-const userInitial = computed(() => displayName.value.charAt(0))
-const roleName = computed(() => {
-  const role = localStorage.getItem('role')
-  return role === 'admin' ? '管理员' : '操作员'
-})
+const displayName = computed(() => userStore.displayName)
+const userInitial = computed(() => userStore.userInitial)
+const roleName = computed(() => userStore.roleName)
 </script>
 
 <style scoped>

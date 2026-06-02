@@ -33,6 +33,7 @@
         </div>
         <div class="card-footer">
           <el-button type="primary" plain @click="printSingle(item.application_no)"><el-icon><Printer /></el-icon> 打印此份</el-button>
+          <el-button type="success" plain @click="downloadPdf(item.application_no)"><el-icon><Download /></el-icon> PDF</el-button>
         </div>
       </div>
     </div>
@@ -73,6 +74,16 @@ const loadConfirmations = async () => {
 const printAll = () => { window.print() }
 const printSingle = (appNo) => { ElMessage.info(`正在打印申请 ${appNo} 的确认书...`) }
 
+const downloadPdf = (appNo) => {
+  const token = localStorage.getItem('token')
+  const link = document.createElement('a')
+  link.href = `http://localhost:5000/api/confirmations/${appNo}/pdf`
+  link.setAttribute('download', `确认书_${appNo}.pdf`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
 onMounted(() => { loadConfirmations() })
 </script>
 
@@ -110,4 +121,10 @@ onMounted(() => { loadConfirmations() })
 .card-footer { padding: 14px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
 .card-footer .el-button { width: 100%; }
 .empty-state { padding: 60px 0; }
+
+@media (max-width: 768px) {
+  .confirmation-grid { grid-template-columns: 1fr; }
+  .toolbar { flex-wrap: wrap; }
+  .card-footer { flex-direction: column; }
+}
 </style>

@@ -1,7 +1,8 @@
 <template>
   <AppLayout activeMenu="export" breadcrumb="财务数据导出" :headerIcon="Download">
     <div class="toolbar">
-      <el-button type="primary" @click="exportData"><el-icon><Download /></el-icon> 导出昨日数据</el-button>
+      <el-button type="primary" @click="exportData"><el-icon><Download /></el-icon> 导出今日数据</el-button>
+      <el-button v-if="exportDataList.length > 0" @click="downloadExcel"><el-icon><Document /></el-icon> 下载Excel文件</el-button>
       <el-button v-if="exportDataList.length > 0" @click="downloadCSV"><el-icon><Document /></el-icon> 下载CSV文件</el-button>
     </div>
     <div v-if="exportDataList.length > 0">
@@ -85,6 +86,17 @@ const exportData = async () => {
   } catch (error) {
     console.error('Failed to export data:', error)
   }
+}
+
+const downloadExcel = async () => {
+  const today = new Date().toISOString().split('T')[0]
+  const token = localStorage.getItem('token')
+  const link = document.createElement('a')
+  link.href = `http://localhost:5000/api/daily_export/excel?date=${today}`
+  link.setAttribute('download', `财务导出_${today}.xlsx`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
 const downloadCSV = () => {
