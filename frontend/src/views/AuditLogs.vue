@@ -1,22 +1,26 @@
 <template>
-  <AppLayout activeMenu="audit-logs" breadcrumb="操作日志" :headerIcon="List">
-    <div class="toolbar">
-      <el-input v-model="filterAction" placeholder="按操作类型筛选" clearable style="width:200px" @keyup.enter="loadLogs" />
-      <el-button type="primary" @click="loadLogs"><el-icon><Search /></el-icon> 查询</el-button>
-      <span style="color:#94a3b8;font-size:13px">共 {{ total }} 条记录</span>
+  <AppLayout activeMenu="audit-logs" :breadcrumb="$t('auditLog.title')" :headerIcon="List">
+    <div class="page-toolbar">
+      <el-input v-model="filterAction" :placeholder="$t('auditLog.filterPlaceholder')" clearable style="width:200px" @keyup.enter="loadLogs" />
+      <div class="toolbar-right">
+        <el-button @click="loadLogs"><el-icon><Search /></el-icon> {{ $t('auditLog.query') }}</el-button>
+        <span class="record-count">{{ $t('auditLog.records', { total }) }}</span>
+      </div>
     </div>
-    <el-table :data="logs" class="data-table" v-loading="loading">
-      <el-table-column prop="created_at" label="时间" width="170" />
-      <el-table-column prop="username" label="操作人" width="100" />
-      <el-table-column prop="action" label="操作" width="120">
+    <div class="page-card">
+      <el-table :data="logs" class="data-table" v-loading="loading">
+      <el-table-column prop="created_at" :label="$t('auditLog.time')" width="170" />
+      <el-table-column prop="username" :label="$t('auditLog.operator')" width="100" />
+      <el-table-column prop="action" :label="$t('auditLog.action')" width="120">
         <template #default="scope">
           <el-tag :type="getActionType(scope.row.action)" size="small" effect="plain">{{ scope.row.action }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="target_type" label="对象类型" width="100" />
-      <el-table-column prop="target_id" label="对象编号" width="160" />
-      <el-table-column prop="detail" label="详情" min-width="300" />
+      <el-table-column prop="target_type" :label="$t('auditLog.targetType')" width="100" />
+      <el-table-column prop="target_id" :label="$t('auditLog.targetId')" width="160" />
+      <el-table-column prop="detail" :label="$t('auditLog.detail')" min-width="300" />
     </el-table>
+    </div>
     <div class="pagination-wrap" v-if="pages > 1">
       <el-pagination background layout="prev, pager, next" :total="total" :page-size="50" v-model:current-page="page" @current-change="loadLogs" />
     </div>
@@ -67,8 +71,10 @@ onMounted(() => { loadLogs() })
 </script>
 
 <style scoped>
-.toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
+.page-toolbar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; justify-content: space-between; }
+.toolbar-right { display: flex; gap: 8px; align-items: center; }
+.record-count { font-size: 13px; color: var(--text-muted); }
+.page-card { background: var(--bg-card); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; }
 .data-table { width: 100%; }
-.data-table :deep(.el-table__header th) { background: #f8fafc; color: #475569; font-weight: 600; }
 .pagination-wrap { margin-top: 20px; display: flex; justify-content: center; }
 </style>

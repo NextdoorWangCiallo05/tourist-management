@@ -1,92 +1,61 @@
 <template>
   <div class="login-page">
-    <div class="bg-circle bg-circle-1"></div>
-    <div class="bg-circle bg-circle-2"></div>
-    <div class="bg-circle bg-circle-3"></div>
-
     <div class="login-card">
-      <div class="login-left">
-        <div class="brand">
-          <div class="brand-icon-wrap">
-            <svg viewBox="0 0 64 64" fill="none">
-              <circle cx="32" cy="32" r="30" fill="url(#g)"/>
-              <path d="M32 18 L32 46 M20 28 L44 28 M18 36 L46 36" stroke="white" stroke-width="3" stroke-linecap="round"/>
-              <circle cx="32" cy="32" r="8" fill="white" opacity="0.3"/>
-              <defs>
-                <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#1e40af"/>
-                  <stop offset="100%" stop-color="#3b82f6"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <h1>智游云管</h1>
-          <p>旅游业务管理系统</p>
+      <div class="login-header">
+        <div class="login-logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect x="2" y="2" width="28" height="28" rx="8" fill="var(--accent)"/>
+            <path d="M10 16L14 20L22 12" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
-        <div class="feature-grid">
-          <div class="feature-cell">
-            <span class="feature-emoji">✈️</span>
-            <span>旅游团管理</span>
-          </div>
-          <div class="feature-cell">
-            <span class="feature-emoji">📋</span>
-            <span>申请办理</span>
-          </div>
-          <div class="feature-cell">
-            <span class="feature-emoji">💰</span>
-            <span>财务管理</span>
-          </div>
-          <div class="feature-cell">
-            <span class="feature-emoji">📊</span>
-            <span>数据分析</span>
-          </div>
-        </div>
-        <div class="login-left-footer">
-          <span class="dot active"></span>
-          <span class="dot"></span>
-          <span class="dot"></span>
-        </div>
+        <h1 class="login-title">{{ $t('app.name') }}</h1>
+        <p class="login-subtitle">{{ $t('app.subtitle') }}</p>
       </div>
-      <div class="login-right">
-        <div class="login-header">
-          <h2>欢迎回来</h2>
-          <p>登录您的账号以继续</p>
+      <el-form class="login-form" @submit.prevent="handleLogin">
+        <div class="form-group">
+          <label class="form-label">{{ $t('login.username') }}</label>
+          <el-input v-model="form.username" :placeholder="$t('login.usernamePlaceholder')" size="large" :prefix-icon="User" clearable />
         </div>
-        <el-form :model="form" class="login-form">
-          <el-form-item>
-            <div class="input-label">用户名</div>
-            <el-input v-model="form.username" placeholder="请输入用户名" />
-          </el-form-item>
-          <el-form-item>
-            <div class="input-label">密码</div>
-            <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
-          </el-form-item>
-          <el-form-item>
-            <div class="form-actions">
-              <el-checkbox v-model="remember">记住密码</el-checkbox>
-              <el-button type="primary" link @click="showForgot = true">忘记密码?</el-button>
-            </div>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" class="submit-btn" @click="handleLogin" :loading="loading">
-              {{ loading ? '登录中...' : '登 录' }}
-            </el-button>
-          </el-form-item>
-        </el-form>
-        <div class="login-divider">
-          <span></span>
-          <span>提示</span>
-          <span></span>
+        <div class="form-group">
+          <label class="form-label">{{ $t('login.password') }}</label>
+          <el-input v-model="form.password" type="password" :placeholder="$t('login.passwordPlaceholder')" size="large" :prefix-icon="Lock" show-password @keyup.enter="handleLogin" />
         </div>
-        <p class="login-tip">默认账号：<strong>admin</strong> 密码：<strong>admin123</strong></p>
+        <div class="form-options">
+          <label class="remember-me">
+            <input type="checkbox" v-model="remember" />
+            <span class="checkmark"></span>
+            <span>{{ $t('login.remember') }}</span>
+          </label>
+          <a class="forgot-link" @click="showForgot = true">{{ $t('login.forgotPassword') }}</a>
+        </div>
+        <el-button type="primary" size="large" class="login-btn" :loading="loading" @click="handleLogin" round>
+          {{ loading ? $t('login.loggingIn') : $t('login.loginBtn') }}
+        </el-button>
+      </el-form>
+      <div class="login-footer">
+        <span class="footer-text">{{ $t('login.defaultAccount') }}</span>
+        <br>
+        <span class="footer-link" @click="showRegister = true">{{ $t('login.noAccount') }}<a>{{ $t('login.register') }}</a></span>
       </div>
     </div>
 
-    <el-dialog v-model="showForgot" title="忘记密码" width="380px">
-      <p style="text-align:center;color:#64748b;">请联系管理员重置密码</p>
-      <div style="text-align:center;margin-top:16px;">
-        <el-button type="primary" @click="showForgot = false">确定</el-button>
-      </div>
+    <el-dialog v-model="showForgot" title="忘记密码" width="400px">
+      <p style="text-align:center;color:var(--text-secondary);margin:0;">请联系管理员重置密码</p>
+      <template #footer>
+        <el-button type="primary" @click="showForgot = false" round>确定</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="showRegister" :title="$t('login.registerTitle')" width="420px">
+      <el-form :model="regForm" :label-width="locale === 'en' ? '100px' : '70px'">
+        <el-form-item :label="$t('login.username')"><el-input v-model="regForm.username" placeholder="4-20位字母或数字" /></el-form-item>
+        <el-form-item label="显示名称"><el-input v-model="regForm.display_name" placeholder="如：李四" /></el-form-item>
+        <el-form-item :label="$t('login.password')"><el-input v-model="regForm.password" type="password" show-password placeholder="不少于6位" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showRegister = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="handleRegister" :loading="regLoading">{{ $t('login.registerBtn') }}</el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -96,14 +65,20 @@ import { ref, onMounted } from 'vue'
 import request from '../utils/request'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { User, Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const store = useUserStore()
+const { locale } = useI18n()
 const form = ref({ username: '', password: '' })
 const remember = ref(false)
 const loading = ref(false)
 const showForgot = ref(false)
+const showRegister = ref(false)
+const regLoading = ref(false)
+const regForm = ref({ username: '', display_name: '', password: '' })
 
 const handleLogin = async () => {
   if (!form.value.username || !form.value.password) {
@@ -128,6 +103,25 @@ const handleLogin = async () => {
   }
 }
 
+const handleRegister = async () => {
+  if (!regForm.value.username || !regForm.value.password) {
+    ElMessage.warning('用户名和密码不能为空')
+    return
+  }
+  regLoading.value = true
+  try {
+    await request.post('/register', regForm.value)
+    showRegister.value = false
+    form.value.username = regForm.value.username
+    form.value.password = regForm.value.password
+    ElMessage.success('注册成功，请登录')
+  } catch {
+    ElMessage.error('注册失败')
+  } finally {
+    regLoading.value = false
+  }
+}
+
 onMounted(() => {
   const u = localStorage.getItem('rememberedUser')
   if (u) {
@@ -143,256 +137,116 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #d1d9e6 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-.bg-circle {
-  position: absolute;
-  border-radius: 50%;
-}
-
-.bg-circle-1 {
-  top: -20%;
-  right: -10%;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
-}
-
-.bg-circle-2 {
-  bottom: -15%;
-  left: -8%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(30,64,175,0.1) 0%, transparent 70%);
-}
-
-.bg-circle-3 {
-  top: 40%;
-  left: 15%;
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(96,165,250,0.08) 0%, transparent 70%);
+  background: var(--bg);
 }
 
 .login-card {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  width: 900px;
-  min-height: 520px;
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.5),
-    0 25px 50px -12px rgba(0,0,0,0.25);
-  overflow: hidden;
-}
-
-.login-left {
-  width: 38%;
-  background: linear-gradient(160deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
-  padding: 48px 32px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: #fff;
-  position: relative;
-}
-
-.login-left::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  pointer-events: none;
-}
-
-.brand {
-  text-align: center;
-  position: relative;
-  z-index: 1;
-}
-
-.brand-icon-wrap {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 20px;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
-}
-
-.brand h1 {
-  font-size: 30px;
-  font-weight: 700;
-  margin: 0 0 8px;
-  letter-spacing: 2px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.brand p {
-  font-size: 14px;
-  margin: 0;
-  opacity: 0.85;
-  font-weight: 300;
-  letter-spacing: 1px;
-}
-
-.feature-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  width: 100%;
-  max-width: 220px;
-  margin-top: 40px;
-  position: relative;
-  z-index: 1;
-}
-
-.feature-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 14px 8px;
-  background: rgba(255,255,255,0.12);
-  border-radius: 12px;
-  font-size: 12px;
-  transition: all 0.3s ease;
-  cursor: default;
-}
-
-.feature-cell:hover {
-  background: rgba(255,255,255,0.22);
-  transform: translateY(-2px);
-}
-
-.feature-emoji {
-  font-size: 22px;
-  line-height: 1;
-}
-
-.login-left-footer {
-  display: flex;
-  gap: 8px;
-  margin-top: 36px;
-  position: relative;
-  z-index: 1;
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.3);
-  transition: all 0.3s ease;
-}
-
-.dot.active {
-  width: 20px;
-  border-radius: 3px;
-  background: rgba(255,255,255,0.8);
-}
-
-.login-right {
-  width: 62%;
-  padding: 48px 56px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  width: 400px;
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  padding: 44px 36px 36px;
+  box-shadow: var(--shadow-lg);
 }
 
 .login-header {
+  text-align: center;
   margin-bottom: 32px;
 }
-
-.login-header h2 {
-  font-size: 26px;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 8px;
+.login-logo {
+  display: inline-flex;
+  margin-bottom: 16px;
 }
-
-.login-header p {
+.login-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+  letter-spacing: 0.5px;
+}
+.login-subtitle {
   font-size: 14px;
-  color: #64748b;
+  color: var(--text-muted);
   margin: 0;
 }
 
 .login-form {
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
-
-.input-label {
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-label {
   font-size: 13px;
   font-weight: 500;
-  color: #334155;
-  margin-bottom: 6px;
+  color: var(--text-secondary);
 }
 
-.form-actions {
+.form-options {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
 }
-
-.submit-btn {
-  width: 100%;
-  height: 46px;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #3b82f6, #1e40af);
-  border: none;
-  transition: all 0.35s ease;
-  box-shadow: 0 4px 15px rgba(59,130,246,0.3);
-}
-
-.submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(59,130,246,0.4);
-}
-
-.submit-btn:active {
-  transform: translateY(0);
-}
-
-.login-divider {
+.remember-me {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 28px;
-}
-
-.login-divider span:first-child,
-.login-divider span:last-child {
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(to right, transparent, #e2e8f0);
-}
-
-.login-divider span:last-child {
-  background: linear-gradient(to left, transparent, #e2e8f0);
-}
-
-.login-divider span:nth-child(2) {
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-.login-tip {
-  text-align: center;
+  gap: 8px;
   font-size: 13px;
-  color: #94a3b8;
-  margin: 12px 0 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.remember-me input { display: none; }
+.checkmark {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.remember-me input:checked + .checkmark {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.remember-me input:checked + .checkmark::after {
+  content: '';
+  width: 5px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-top: -1px;
+}
+.forgot-link {
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+.forgot-link:hover { opacity: 0.8; }
+
+.login-btn {
+  width: 100%;
+  height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 2px;
 }
 
-.login-tip strong {
-  color: #3b82f6;
-  font-weight: 600;
+.login-footer {
+  text-align: center;
+  margin-top: 24px;
 }
+.footer-text {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.footer-link { font-size: 13px; color: var(--text-muted); cursor: pointer; }
+.footer-link a { color: var(--accent); text-decoration: none; }
+.footer-link a:hover { opacity: 0.8; }
 </style>

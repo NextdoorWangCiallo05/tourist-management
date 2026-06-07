@@ -35,7 +35,9 @@ def log_audit(action, target_type=None, target_id=None, detail=None):
 @jwt_required()
 def search():
     args = request.args
-    q = Application.query
+    page = args.get('page', 1, type=int)
+    per_page = args.get('per_page', 20, type=int)
+    q = Application.query.order_by(Application.created_at.desc())
     gc = args.get('group_code')
     if gc:
         g = TourGroup.query.filter_by(group_code=gc).first()
@@ -44,16 +46,16 @@ def search():
     if rn: q = q.filter(Application.responsible_name.like(f'%{rn}%'))
     an = args.get('application_no')
     if an: q = q.filter_by(application_no=an)
-    apps = q.all()
+    paginated = q.paginate(page=page, per_page=per_page, error_out=False)
     result = []
-    for a in apps:
+    for a in paginated.items:
         g = TourGroup.query.get(a.tour_group_id)
         rt = Route.query.get(g.route_id)
         result.append({'id': a.id, 'application_no': a.application_no, 'group_code': g.group_code,
                        'route_name': rt.route_name, 'departure_date': g.departure_date.strftime('%Y-%m-%d'),
                        'responsible_name': a.responsible_name, 'status': a.status,
                        'created_at': a.created_at.strftime('%Y-%m-%d %H:%M')})
-    return ok(result)
+    return ok({'items': result, 'total': paginated.total, 'page': page, 'pages': paginated.pages})
 
 
 @apps_bp.route('', methods=['POST'])
@@ -110,20 +112,43 @@ def detail(app_no):
 @apps_bp.route('/<app_no>/participants', methods=['POST'])
 @jwt_required()
 def add_participants(app_no):
+    """新增参加者视为新申请处理"""
+    from .groups import calc_deposit_rate as calc_rate
     a = Application.query.filter_by(application_no=app_no).first()
     if not a: return not_found('申请不存在')
+    g = TourGroup.query.get(a.tour_group_id)
     data = request.get_json()
     items = data if isinstance(data, list) else data.get('participants', [data])
+    today = datetime.now().date()
+    # 为每个新参加者创建新申请
+    created_apps = []
     for p in items:
-        db.session.add(Participant(
-            application_id=a.id, name=p['name'], id_type=p.get('id_type', '身份证'),
-            id_number=p.get('id_number', ''), is_adult=p.get('is_adult', True),
-            phone_number=p.get('phone_number') or p.get('phone', ''),
-            gender=p.get('gender'), address=p.get('address', ''),
-            is_responsible=p.get('is_responsible', False)
-        ))
+        rate = calc_rate((g.departure_date - today).days)
+        is_adult = p.get('is_adult', True)
+        price = g.adult_price if is_adult else g.child_price
+        deposit = round(price * rate, 2)
+        balance = round(price - deposit, 2)
+        no = gen_no()
+        new_app = Application(
+            application_no=no, tour_group_id=g.id,
+            responsible_name=p['name'], responsible_phone=p.get('phone_number', '') or p.get('phone', ''),
+            adult_count=1 if is_adult else 0, child_count=0 if is_adult else 1,
+            deposit_amount=deposit, balance_amount=balance, status='pending'
+        )
+        db.session.add(new_app)
+        db.session.flush()
+        participant = Participant(
+            application_id=new_app.id, name=p['name'],
+            id_type=p.get('id_type', '身份证'), id_number=p.get('id_number', ''),
+            is_adult=is_adult, phone_number=p.get('phone_number', '') or p.get('phone', ''),
+            gender=p.get('gender', ''), address=p.get('address', ''),
+            is_responsible=True
+        )
+        db.session.add(participant)
+        created_apps.append(no)
     db.session.commit()
-    return ok(None, '参加者添加成功')
+    return created({'application_nos': created_apps, 'count': len(created_apps)},
+                   f'已为 {len(created_apps)} 名新参加者创建独立申请')
 
 
 @apps_bp.route('/<app_no>/participants/import', methods=['POST'])

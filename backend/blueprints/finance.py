@@ -85,7 +85,26 @@ def get_confirmations():
 @jwt_required()
 def confirmation_pdf(app_no):
     from reportlab.lib.pagesizes import A4
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.pdfgen import canvas
+    import os as _os
+    
+    font_paths = [
+        r'C:\Windows\Fonts\msyh.ttc',
+        r'C:\Windows\Fonts\simsun.ttc',
+        r'C:\Windows\Fonts\STSONG.TTF',
+    ]
+    chinese_font = 'Helvetica'
+    for fp in font_paths:
+        if _os.path.exists(fp):
+            try:
+                pdfmetrics.registerFont(TTFont('CNFont', fp))
+                chinese_font = 'CNFont'
+                break
+            except:
+                pass
+    
     a = Application.query.filter_by(application_no=app_no).first()
     if not a: return not_found('申请不存在')
     g = TourGroup.query.get(a.tour_group_id)
@@ -93,9 +112,9 @@ def confirmation_pdf(app_no):
     buf = pyio.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
-    c.setFont('Helvetica-Bold', 18)
-    c.drawString(50, h - 50, '旅游确认书')
-    c.setFont('Helvetica', 12)
+    c.setFont(f'{chinese_font}', 20)
+    c.drawString(50, h - 50, '旅 游 确 认 书')
+    c.setFont(f'{chinese_font}', 11)
     y = h - 90
     items = [
         f'确认编号: {a.application_no}',

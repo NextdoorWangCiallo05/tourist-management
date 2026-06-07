@@ -1,87 +1,87 @@
 <template>
-  <AppLayout activeMenu="applications" :breadcrumb="'申请详情 / ' + (application?.application_no || '')" :headerIcon="Document">
+  <AppLayout activeMenu="applications" :breadcrumb="$t('application.detail') + ' / ' + (application?.application_no || '')" :headerIcon="Document">
     <div v-if="loading" class="loading-state">
       <el-icon class="loading-icon" :size="32"><Loading /></el-icon>
-      <p>加载中...</p>
+      <p>{{ $t('common.loading') }}</p>
     </div>
     <template v-else-if="application">
       <div class="detail-header">
         <div class="detail-header-left">
-          <h2 class="detail-title">申请详情</h2>
+          <h2 class="detail-title">{{ $t('application.detail') }}</h2>
           <el-tag :type="getStatusType(application.status)" effect="dark" size="small" round>
             {{ getStatusText(application.status) }}
           </el-tag>
         </div>
         <div class="detail-header-actions">
-          <el-button @click="navigate('/applications')"><el-icon><Back /></el-icon> 返回列表</el-button>
+          <el-button @click="navigate('/applications')"><el-icon><Back /></el-icon> {{ $t('application.backToList') }}</el-button>
           <el-button v-if="application.status === 'pending'" type="danger" plain @click="cancelApplication">
-            <el-icon><Close /></el-icon> 取消申请
+            <el-icon><Close /></el-icon> {{ $t('application.cancelApp') }}
           </el-button>
         </div>
       </div>
       <div class="detail-grid">
         <div class="detail-card">
-          <div class="detail-card-header"><el-icon><InfoFilled /></el-icon> 基本信息</div>
+          <div class="detail-card-header"><el-icon><InfoFilled /></el-icon> {{ $t('application.basicInfo') }}</div>
           <div class="detail-card-body">
-            <div class="detail-row"><span class="detail-label">申请编号</span><span>{{ application.application_no }}</span></div>
-            <div class="detail-row"><span class="detail-label">旅游团代码</span><span>{{ application.tour_group_code }}</span></div>
-            <div class="detail-row"><span class="detail-label">路线名称</span><span>{{ application.route_name }}</span></div>
-            <div class="detail-row"><span class="detail-label">出发日期</span><span>{{ application.departure_date }}</span></div>
-            <div class="detail-row"><span class="detail-label">责任人</span><span>{{ application.responsible_name }}</span></div>
-            <div class="detail-row"><span class="detail-label">联系电话</span><span>{{ application.responsible_phone }}</span></div>
-            <div class="detail-row"><span class="detail-label">创建时间</span><span>{{ application.created_at }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.appNo') }}</span><span>{{ application.application_no }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.groupCode') }}</span><span>{{ application.tour_group_code }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.routeName') }}</span><span>{{ application.route_name }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.departureDate') }}</span><span>{{ application.departure_date }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.responsiblePerson') }}</span><span>{{ application.responsible_name }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.responsiblePhone') }}</span><span>{{ application.responsible_phone }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.createdAt') }}</span><span>{{ application.created_at }}</span></div>
           </div>
         </div>
         <div class="detail-card">
-          <div class="detail-card-header"><el-icon><Money /></el-icon> 费用信息</div>
+          <div class="detail-card-header"><el-icon><Money /></el-icon> {{ $t('application.feeInfo') }}</div>
           <div class="detail-card-body">
-            <div class="detail-row"><span class="detail-label">成人人数</span><span>{{ application.adult_count }} 人</span></div>
-            <div class="detail-row"><span class="detail-label">儿童人数</span><span>{{ application.child_count }} 人</span></div>
-            <div class="detail-row"><span class="detail-label">成人单价</span><span>¥{{ fmt(application.adult_price) }}</span></div>
-            <div class="detail-row"><span class="detail-label">儿童单价</span><span>¥{{ fmt(application.child_price) }}</span></div>
-            <div class="detail-row"><span class="detail-label">总费用</span><span class="amount">¥{{ fmt(application.total_amount) }}</span></div>
-            <div class="detail-row"><span class="detail-label">订金金额</span><span class="amount deposit">¥{{ fmt(application.deposit_amount) }}</span></div>
-            <div class="detail-row"><span class="detail-label">订金支付截止</span><span>{{ application.deposit_due_date }}</span></div>
-            <div class="detail-row"><span class="detail-label">余款支付截止</span><span>{{ application.balance_due_date }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.adultCount') }}</span><span>{{ application.adult_count }} {{ $t('common.person') }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.childCount') }}</span><span>{{ application.child_count }} {{ $t('common.person') }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.adultPrice') }}</span><span>¥{{ fmt(application.adult_price) }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.childPrice') }}</span><span>¥{{ fmt(application.child_price) }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.totalAmount') }}</span><span class="amount">¥{{ fmt(application.total_amount) }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.depositAmount') }}</span><span class="amount deposit">¥{{ fmt(application.deposit_amount) }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.depositDueDate') }}</span><span>{{ application.deposit_due_date }}</span></div>
+            <div class="detail-row"><span class="detail-label">{{ $t('application.balanceDueDate') }}</span><span>{{ application.balance_due_date }}</span></div>
           </div>
         </div>
       </div>
       <div class="detail-card participants-card">
-        <div class="detail-card-header"><el-icon><UserFilled /></el-icon> 参加者列表</div>
+        <div class="detail-card-header"><el-icon><UserFilled /></el-icon> {{ $t('application.participantList') }}</div>
         <div class="detail-card-body">
           <el-table :data="application.participants" class="data-table">
-            <el-table-column prop="name" label="姓名" width="120" />
-            <el-table-column prop="id_type" label="证件类型" width="120" />
-            <el-table-column prop="id_number" label="证件号码" min-width="200" />
-            <el-table-column prop="phone" label="联系电话" width="140" />
-            <el-table-column prop="is_adult" label="类型" width="80">
+            <el-table-column prop="name" :label="$t('application.nameCol')" width="120" />
+            <el-table-column prop="id_type" :label="$t('application.idTypeCol')" width="120" />
+            <el-table-column prop="id_number" :label="$t('application.idNumberCol')" min-width="200" />
+            <el-table-column prop="phone" :label="$t('application.phoneCol')" width="140" />
+            <el-table-column prop="is_adult" :label="$t('application.typeCol')" width="80">
               <template #default="scope">
                 <el-tag :type="scope.row.is_adult ? 'primary' : 'success'" size="small" effect="plain">
-                  {{ scope.row.is_adult ? '成人' : '儿童' }}
+                  {{ scope.row.is_adult ? $t('common.adult') : $t('common.child') }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="160">
+            <el-table-column :label="$t('application.actionCol')" width="160">
               <template #default="scope">
-                <el-button size="small" @click="editParticipant(scope.row)">编辑</el-button>
-                <el-button size="small" type="danger" plain @click="removeParticipant(scope.row.id)">移除</el-button>
+                <el-button size="small" @click="editParticipant(scope.row)">{{ $t('application.editCol') }}</el-button>
+                <el-button size="small" type="danger" plain @click="removeParticipant(scope.row.id)">{{ $t('application.removeCol') }}</el-button>
               </template>
             </el-table-column>
           </el-table>
           <el-button class="add-participant-btn" @click="showAddParticipant = true">
-            <el-icon><Plus /></el-icon> 添加参加者
+            <el-icon><Plus /></el-icon> {{ $t('application.addParticipant') }}
           </el-button>
         </div>
       </div>
       <div class="action-bar">
         <el-button v-if="application.status === 'pending' && !application.deposit_paid" type="warning" size="large" @click="payDeposit">
-          <el-icon><Money /></el-icon> 支付订金 (¥{{ fmt(application.deposit_amount) }})
+          <el-icon><Money /></el-icon> {{ $t('application.payDeposit') }} (¥{{ fmt(application.deposit_amount) }})
         </el-button>
         <el-button v-if="application.status === 'pending' && application.deposit_paid && !application.balance_paid" type="success" size="large" @click="payBalance">
-          <el-icon><Money /></el-icon> 支付余款
+          <el-icon><Money /></el-icon> {{ $t('application.payBalance') }}
         </el-button>
         <el-button v-if="application.status === 'pending' && application.deposit_paid" type="primary" size="large" @click="completeApplication">
-          <el-icon><CircleCheck /></el-icon> 完成申请
+          <el-icon><CircleCheck /></el-icon> {{ $t('application.completeApp') }}
         </el-button>
       </div>
     </template>
@@ -117,6 +117,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import request from '../utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -129,6 +130,7 @@ import AppLayout from '../components/AppLayout.vue'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const application = ref(null)
 const loading = ref(true)
 const showAddParticipant = ref(false)
@@ -156,18 +158,29 @@ const getStatusType = (status) => {
 }
 
 const getStatusText = (status) => {
-  const texts = { pending: '处理中', completed: '已完成', cancelled: '已取消' }
+  const texts = { pending: t('application.statusPending'), completed: t('application.statusCompleted'), cancelled: t('application.statusCancelled') }
   return texts[status] || status
 }
 
 const cancelApplication = async () => {
   try {
-    await ElMessageBox.confirm('确定要取消此申请吗？', '确认取消', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' })
-    const res = await request.post(`/applications/${application.value.application_no}/cancel`)
-    ElMessage.success(`取消成功！手续费: ${res.cancellation_fee}, 退款金额: ${res.refund_amount}`)
+    const app = application.value
+    await ElMessageBox.confirm(
+      `${t('confirm.cancelApp')}<br><br>
+      <b>${t('application.cancelFeeRule')}</b><br>
+      • ${t('application.free30d')}<br>
+      • ${t('application.fee20d')}<br>
+      • ${t('application.fee50d')}<br>
+      • ${t('application.fee100d')}<br><br>
+      <span style="color:#ef4444">${t('application.irreversible')}</span>`,
+      t('confirm.titleCancel'),
+      { confirmButtonText: '确定取消', cancelButtonText: '再想想', type: 'warning', dangerouslyUseHTMLString: true }
+    )
+    const res = await request.post(`/applications/${app.application_no}/cancel`)
+    ElMessage.success(t('application.cancelSuccess', { fee: res.cancellation_fee, refund: res.refund_amount }))
     loadApplication()
   } catch (error) {
-    if (error !== 'cancel') ElMessage.error('取消失败')
+    if (error !== 'cancel') ElMessage.error(t('common.fail'))
   }
 }
 
@@ -206,13 +219,12 @@ const completeApplication = async () => {
 
 const addParticipant = async () => {
   try {
-    await request.post(`/applications/${application.value.application_no}/participants`, newParticipant.value)
+    const res = await request.post(`/applications/${application.value.application_no}/participants`, newParticipant.value)
     showAddParticipant.value = false
     newParticipant.value = { name: '', id_type: '身份证', id_number: '', phone: '', is_adult: true }
-    loadApplication()
-    ElMessage.success('参加者添加成功')
+    ElMessage.success(`已创建新申请，编号: ${res.application_nos?.join(', ') || ''}`)
   } catch (error) {
-    ElMessage.error('添加失败')
+    ElMessage.error('创建申请失败')
   }
 }
 
@@ -222,8 +234,40 @@ const editParticipant = (participant) => {
 
 const removeParticipant = async (participantId) => {
   try {
-    await ElMessageBox.confirm('确定移除该参加者？', '确认移除', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' })
-    await request.post(`/participants/${participantId}/cancel`)
+    const participant = application.value.participants.find(p => p.id === participantId)
+    const isResponsible = participant?.is_responsible
+    const others = application.value.participants.filter(p => p.id !== participantId && p.status === 'active')
+
+    if (isResponsible && others.length > 0) {
+      // 责任人被取消，需要选新责任人
+      const options = others.map(p => ({ value: p.id, label: `${p.name}（${p.phone || '无电话'}）` }))
+      const html = `
+        <p>该参加者是当前<b>责任人</b>，请选择新的责任人：</p>
+        <div style="margin-top:12px">
+          ${others.map((p, i) => `
+            <label style="display:block;padding:8px 12px;border:1px solid #eef0f4;border-radius:8px;margin-bottom:6px;cursor:pointer">
+              <input type="radio" name="new_responsible" value="${p.id}" ${i === 0 ? 'checked' : ''} style="margin-right:8px">
+              <b>${p.name}</b> <span style="color:#94a3b8">${p.phone || ''}</span>
+            </label>
+          `).join('')}
+        </div>
+      `
+      await ElMessageBox.confirm(html, '选择新责任人', {
+        confirmButtonText: '确认移除并转移', cancelButtonText: '取消',
+        type: 'warning', dangerouslyUseHTMLString: true,
+        customClass: 'responsible-transfer-dialog'
+      })
+      // 获取选中的 radio
+      const radios = document.querySelectorAll('input[name="new_responsible"]')
+      let newId = null
+      radios.forEach(r => { if (r.checked) newId = r.value })
+      await request.post(`/participants/${participantId}/cancel`, { new_responsible_id: parseInt(newId) })
+    } else {
+      await ElMessageBox.confirm(`确认移除参加者 <b>${participant?.name || ''}</b>？`, '确认移除', {
+        confirmButtonText: '确定移除', cancelButtonText: '取消', type: 'warning', dangerouslyUseHTMLString: true
+      })
+      await request.post(`/participants/${participantId}/cancel`)
+    }
     ElMessage.success('参加者已移除')
     loadApplication()
   } catch (error) {

@@ -4,6 +4,8 @@ from datetime import datetime
 from models import db, Route, TourGroup, PriceHistory
 from .response import ok, created, fail, not_found
 
+__all__ = ['calc_deposit_rate']
+
 groups_bp = Blueprint('groups', __name__, url_prefix='/api/tour_groups')
 
 

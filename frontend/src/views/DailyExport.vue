@@ -1,50 +1,52 @@
 <template>
-  <AppLayout activeMenu="export" breadcrumb="财务数据导出" :headerIcon="Download">
-    <div class="toolbar">
-      <el-button type="primary" @click="exportData"><el-icon><Download /></el-icon> 导出今日数据</el-button>
-      <el-button v-if="exportDataList.length > 0" @click="downloadExcel"><el-icon><Document /></el-icon> 下载Excel文件</el-button>
-      <el-button v-if="exportDataList.length > 0" @click="downloadCSV"><el-icon><Document /></el-icon> 下载CSV文件</el-button>
+  <AppLayout activeMenu="export" :breadcrumb="$t('export.title')" :headerIcon="Download">
+    <div class="page-toolbar">
+      <el-button type="primary" @click="exportData"><el-icon><Download /></el-icon> {{ $t('export.exportBtn') }}</el-button>
+      <div class="toolbar-right">
+        <el-button v-if="exportDataList.length > 0" @click="downloadExcel"><el-icon><Document /></el-icon> {{ $t('export.downloadExcel') }}</el-button>
+        <el-button v-if="exportDataList.length > 0" @click="downloadCSV"><el-icon><Document /></el-icon> {{ $t('export.downloadCSV') }}</el-button>
+      </div>
     </div>
     <div v-if="exportDataList.length > 0">
       <div class="summary-cards">
         <div class="summary-card">
           <div class="summary-icon"><el-icon :size="24"><Document /></el-icon></div>
-          <div class="summary-info"><span class="summary-label">总笔数</span><span class="summary-value">{{ exportDataList.length }}</span></div>
+          <div class="summary-info"><span class="summary-label">{{ $t('export.totalCount') }}</span><span class="summary-value">{{ exportDataList.length }}</span></div>
         </div>
         <div class="summary-card">
           <div class="summary-icon deposit"><el-icon :size="24"><Money /></el-icon></div>
-          <div class="summary-info"><span class="summary-label">订金收入</span><span class="summary-value deposit">¥{{ depositTotal }}</span></div>
+          <div class="summary-info"><span class="summary-label">{{ $t('export.depositTotal') }}</span><span class="summary-value deposit">¥{{ depositTotal }}</span></div>
         </div>
         <div class="summary-card">
           <div class="summary-icon balance"><el-icon :size="24"><Money /></el-icon></div>
-          <div class="summary-info"><span class="summary-label">余款收入</span><span class="summary-value balance">¥{{ balanceTotal }}</span></div>
+          <div class="summary-info"><span class="summary-label">{{ $t('export.balanceTotal') }}</span><span class="summary-value balance">¥{{ balanceTotal }}</span></div>
         </div>
         <div class="summary-card">
           <div class="summary-icon total"><el-icon :size="24"><Coin /></el-icon></div>
-          <div class="summary-info"><span class="summary-label">总收入</span><span class="summary-value total">¥{{ totalAmount }}</span></div>
+          <div class="summary-info"><span class="summary-label">{{ $t('export.grandTotal') }}</span><span class="summary-value total">¥{{ totalAmount }}</span></div>
         </div>
       </div>
       <el-table :data="exportDataList" class="data-table">
-        <el-table-column prop="payment_id" label="支付ID" width="100" />
-        <el-table-column prop="application_no" label="申请编号" width="160" />
-        <el-table-column prop="route_name" label="路线名称" min-width="160" />
-        <el-table-column prop="group_code" label="旅游团" width="120" />
-        <el-table-column prop="responsible_name" label="责任人" width="100" />
-        <el-table-column prop="payment_type" label="支付类型" width="100">
+        <el-table-column prop="payment_id" :label="$t('export.paymentId')" width="100" />
+        <el-table-column prop="application_no" :label="$t('export.appNo')" width="160" />
+        <el-table-column prop="route_name" :label="$t('export.routeName')" min-width="160" />
+        <el-table-column prop="group_code" :label="$t('export.groupCode')" width="120" />
+        <el-table-column prop="responsible_name" :label="$t('export.responsible')" width="100" />
+        <el-table-column prop="payment_type" :label="$t('export.paymentType')" width="100">
           <template #default="scope">
             <el-tag :type="scope.row.payment_type === 'deposit' ? 'warning' : 'success'" effect="dark" size="small" round>
-              {{ scope.row.payment_type === 'deposit' ? '订金' : '余款' }}
+              {{ scope.row.payment_type === 'deposit' ? $t('export.depositType') : $t('export.balanceType') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="amount" label="金额" width="120">
+        <el-table-column prop="amount" :label="$t('export.amount')" width="120">
           <template #default="scope">¥{{ fmt(scope.row.amount) }}</template>
         </el-table-column>
-        <el-table-column prop="paid_at" label="支付时间" width="180" />
+        <el-table-column prop="paid_at" :label="$t('export.paidAt')" width="180" />
       </el-table>
     </div>
     <div v-else class="empty-state">
-      <el-empty description="暂无需要导出的数据" />
+      <el-empty :description="$t('export.noData')" />
     </div>
   </AppLayout>
 </template>
@@ -91,12 +93,23 @@ const exportData = async () => {
 const downloadExcel = async () => {
   const today = new Date().toISOString().split('T')[0]
   const token = localStorage.getItem('token')
-  const link = document.createElement('a')
-  link.href = `http://localhost:5000/api/daily_export/excel?date=${today}`
-  link.setAttribute('download', `财务导出_${today}.xlsx`)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+  try {
+    const res = await fetch(`http://localhost:5000/api/daily_export/excel?date=${today}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (!res.ok) { ElMessage.error('下载失败'); return }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `财务导出_${today}.xlsx`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    ElMessage.error('下载失败：' + e.message)
+  }
 }
 
 const downloadCSV = () => {
@@ -145,4 +158,6 @@ onMounted(() => { exportData() })
 .data-table { width: 100%; }
 .data-table :deep(.el-table__header th) { background: #f8fafc; color: #475569; font-weight: 600; }
 .empty-state { padding: 60px 0; }
+.toolbar-right { display: flex; gap: 8px; }
+.page-toolbar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; justify-content: space-between; }
 </style>

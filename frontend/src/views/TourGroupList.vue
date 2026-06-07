@@ -1,9 +1,9 @@
 <template>
-  <AppLayout activeMenu="tour-groups" breadcrumb="旅游团查询" :headerIcon="Search">
-    <div class="search-section">
-      <div class="search-box">
-        <el-input v-model="searchText" placeholder="搜索旅游团名称或代码" clearable @keyup.enter="searchGroups" />
-        <el-button type="primary" @click="searchGroups"><el-icon><Search /></el-icon> 检索旅游团</el-button>
+  <AppLayout activeMenu="tour-groups" :breadcrumb="$t('tourGroup.query')" :headerIcon="Search">
+    <div class="page-toolbar">
+      <el-input v-model="searchText" :placeholder="$t('common.search') + '...'" clearable style="width:300px" @keyup.enter="searchGroups" />
+      <div class="toolbar-right">
+        <el-button @click="searchGroups"><el-icon><Search /></el-icon> {{ $t('common.search') }}</el-button>
       </div>
     </div>
     <div class="tour-group-grid">
@@ -11,7 +11,7 @@
         <div class="card-header">
           <div class="card-header-left">
             <el-tag size="small" :type="canApply(group) ? 'success' : 'danger'" effect="dark" round>
-              {{ canApply(group) ? '可报名' : '已截止' }}
+              {{ canApply(group) ? $t('common.yes') : $t('common.no') }}
             </el-tag>
             <span class="group-code">{{ group.group_code }}</span>
           </div>
@@ -20,27 +20,27 @@
         <div class="card-body">
           <h3 class="route-name">{{ group.route_name }}</h3>
           <div class="info-rows">
-            <div class="info-row"><el-icon><Calendar /></el-icon><span>出发：{{ group.departure_date }}</span></div>
-            <div class="info-row"><el-icon><Timer /></el-icon><span>截止：{{ group.deadline_date }}</span></div>
-            <div class="info-row"><el-icon><UserFilled /></el-icon><span>剩余：<strong>{{ getRemainingCapacity(group) }} / {{ group.max_capacity }}</strong> 人</span></div>
+            <div class="info-row"><el-icon><Calendar /></el-icon><span>{{ $t('tourGroup.departureDate') }}：{{ group.departure_date }}</span></div>
+            <div class="info-row"><el-icon><Timer /></el-icon><span>{{ $t('tourGroup.deadlineDate') }}：{{ group.deadline_date }}</span></div>
+            <div class="info-row"><el-icon><UserFilled /></el-icon><span>{{ $t('tourGroup.remaining') }}：<strong>{{ getRemainingCapacity(group) }} / {{ group.max_capacity }}</strong> {{ $t('common.person') }}</span></div>
           </div>
           <div class="price-row">
-            <div class="price-item"><span class="price-label">成人</span><span class="price-value">¥{{ group.adult_price }}</span></div>
+            <div class="price-item"><span class="price-label">{{ $t('common.adult') }}</span><span class="price-value">¥{{ group.adult_price }}</span></div>
             <div class="price-divider"></div>
-            <div class="price-item"><span class="price-label">儿童</span><span class="price-value">¥{{ group.child_price }}</span></div>
+            <div class="price-item"><span class="price-label">{{ $t('common.child') }}</span><span class="price-value">¥{{ group.child_price }}</span></div>
           </div>
         </div>
         <div class="card-footer">
-          <el-button @click="checkAvailability(group)" :icon="InfoFilled">检查可用性</el-button>
-          <el-button type="primary" @click="createApplication(group.id)" :disabled="!canApply(group)">立即报名</el-button>
+          <el-button @click="checkAvailability(group)" :icon="InfoFilled">{{ $t('common.detail') }}</el-button>
+          <el-button type="primary" @click="createApplication(group.id)" :disabled="!canApply(group)">{{ $t('tourGroup.bookNow') }}</el-button>
         </div>
       </div>
     </div>
     <div v-if="filteredGroups.length === 0" class="empty-state">
-      <el-empty description="未找到匹配的旅游团" />
+      <el-empty :description="$t('common.noData')" />
     </div>
   </AppLayout>
-  <el-dialog v-model="showAvailability" title="可用性检查结果" width="420px">
+  <el-dialog v-model="showAvailability" :title="$t('common.detail')" width="420px">
     <div class="availability-result">
       <div :class="['result-icon', availabilityResult?.available ? 'success' : 'error']">
         <el-icon v-if="availabilityResult?.available" :size="32"><CircleCheck /></el-icon>
@@ -127,14 +127,14 @@ onMounted(() => { loadGroups() })
 </script>
 
 <style scoped>
-.search-section { margin-bottom: 24px; }
-.search-box { display: flex; gap: 12px; max-width: 520px; }
-.tour-group-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.page-toolbar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; justify-content: space-between; }
+.toolbar-right { display: flex; gap: 8px; }
+.tour-group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
 .tour-card {
-  background: white; border-radius: 14px; overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: all 0.25s ease;
+  background: var(--bg-card); border-radius: var(--radius-md); overflow: hidden;
+  box-shadow: var(--shadow-sm); transition: all 0.2s ease;
 }
-.tour-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+.tour-card:hover { box-shadow: var(--shadow-md); }
 .card-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;

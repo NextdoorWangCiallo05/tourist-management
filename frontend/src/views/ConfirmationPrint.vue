@@ -1,44 +1,47 @@
 <template>
-  <AppLayout activeMenu="confirmations" breadcrumb="确认书打印" :headerIcon="Printer">
-    <div class="toolbar">
-      <el-button type="primary" @click="loadConfirmations"><el-icon><Refresh /></el-icon> 获取昨日确认数据</el-button>
-      <el-button v-if="confirmations.length > 0" @click="printAll"><el-icon><Printer /></el-icon> 打印全部</el-button>
+  <AppLayout activeMenu="confirmations" :breadcrumb="$t('confirmation.title')" :headerIcon="Printer">
+    <div class="page-toolbar">
+      <span class="toolbar-title">{{ $t('confirmation.yesterdayList') }}</span>
+      <div class="toolbar-right">
+        <el-button type="primary" @click="loadConfirmations"><el-icon><Refresh /></el-icon> {{ $t('confirmation.getData') }}</el-button>
+        <el-button v-if="confirmations.length > 0" @click="printAll"><el-icon><Printer /></el-icon> {{ $t('confirmation.printAll') }}</el-button>
+      </div>
     </div>
     <div v-if="confirmations.length > 0" class="confirmation-grid">
       <div v-for="item in confirmations" :key="item.application_no" class="confirmation-card">
         <div class="card-header">
           <div class="card-header-left">
             <el-icon class="card-icon"><Document /></el-icon>
-            <h3>旅游确认书</h3>
+            <h3>{{ $t('app.name') }}</h3>
           </div>
           <el-tag size="small" effect="plain" type="primary">{{ item.application_no }}</el-tag>
         </div>
         <div class="card-body">
           <div class="info-grid">
-            <div class="info-item"><span class="label">路线名称</span><span class="value">{{ item.route_name }}</span></div>
-            <div class="info-item"><span class="label">旅游团</span><span class="value">{{ item.group_code }}</span></div>
-            <div class="info-item"><span class="label">出发日期</span><span class="value">{{ item.departure_date }}</span></div>
-            <div class="info-item"><span class="label">责任人</span><span class="value">{{ item.responsible_name }}</span></div>
-            <div class="info-item"><span class="label">联系电话</span><span class="value">{{ item.responsible_phone }}</span></div>
-            <div class="info-item"><span class="label">人数</span><span class="value">成人 {{ item.adult_count }} / 儿童 {{ item.child_count }}</span></div>
-            <div class="info-item highlight"><span class="label">总费用</span><span class="value amount">¥{{ fmt(item.total_amount) }}</span></div>
+            <div class="info-item"><span class="label">{{ $t('confirmation.routeName') }}</span><span class="value">{{ item.route_name }}</span></div>
+            <div class="info-item"><span class="label">{{ $t('confirmation.groupCode') }}</span><span class="value">{{ item.group_code }}</span></div>
+            <div class="info-item"><span class="label">{{ $t('confirmation.departureDate') }}</span><span class="value">{{ item.departure_date }}</span></div>
+            <div class="info-item"><span class="label">{{ $t('confirmation.responsible') }}</span><span class="value">{{ item.responsible_name }}</span></div>
+            <div class="info-item"><span class="label">{{ $t('confirmation.phone') }}</span><span class="value">{{ item.responsible_phone }}</span></div>
+            <div class="info-item"><span class="label">{{ $t('confirmation.persons') }}</span><span class="value">{{ $t('confirmation.adult') }} {{ item.adult_count }} / {{ $t('confirmation.child') }} {{ item.child_count }}</span></div>
+            <div class="info-item highlight"><span class="label">{{ $t('confirmation.totalAmount') }}</span><span class="value amount">¥{{ fmt(item.total_amount) }}</span></div>
           </div>
           <div v-if="item.print_balance_notice" class="balance-section">
-            <div class="balance-header"><el-icon><Money /></el-icon> 余额交款单</div>
+            <div class="balance-header"><el-icon><Money /></el-icon> {{ $t('confirmation.printBalanceNotice') }}</div>
             <div class="info-grid">
-              <div class="info-item"><span class="label">余额金额</span><span class="value amount">¥{{ fmt(item.total_amount - (item.deposit_paid ? item.total_amount * 0.2 : 0)) }}</span></div>
-              <div class="info-item"><span class="label">支付截止日期</span><span class="value">{{ item.balance_due_date }}</span></div>
+              <div class="info-item"><span class="label">{{ $t('confirmation.balance') }}</span><span class="value amount">¥{{ fmt(item.total_amount - (item.deposit_paid ? item.total_amount * 0.2 : 0)) }}</span></div>
+              <div class="info-item"><span class="label">{{ $t('application.balanceDueDate') }}</span><span class="value">{{ item.balance_due_date }}</span></div>
             </div>
           </div>
         </div>
         <div class="card-footer">
-          <el-button type="primary" plain @click="printSingle(item.application_no)"><el-icon><Printer /></el-icon> 打印此份</el-button>
-          <el-button type="success" plain @click="downloadPdf(item.application_no)"><el-icon><Download /></el-icon> PDF</el-button>
+          <el-button type="primary" plain @click="printSingle(item.application_no)"><el-icon><Printer /></el-icon> {{ $t('confirmation.printOne') }}</el-button>
+          <el-button type="success" plain @click="downloadPdf(item.application_no)"><el-icon><Download /></el-icon> {{ $t('confirmation.pdf') }}</el-button>
         </div>
       </div>
     </div>
     <div v-else class="empty-state">
-      <el-empty description="暂无需要打印的确认书" />
+      <el-empty :description="$t('confirmation.noData')" />
     </div>
   </AppLayout>
 </template>
@@ -74,27 +77,40 @@ const loadConfirmations = async () => {
 const printAll = () => { window.print() }
 const printSingle = (appNo) => { ElMessage.info(`正在打印申请 ${appNo} 的确认书...`) }
 
-const downloadPdf = (appNo) => {
+const downloadPdf = async (appNo) => {
   const token = localStorage.getItem('token')
-  const link = document.createElement('a')
-  link.href = `http://localhost:5000/api/confirmations/${appNo}/pdf`
-  link.setAttribute('download', `确认书_${appNo}.pdf`)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+  try {
+    const res = await fetch(`http://localhost:5000/api/confirmations/${appNo}/pdf`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (!res.ok) { ElMessage.error('下载失败'); return }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `确认书_${appNo}.pdf`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    ElMessage.error('下载失败：' + e.message)
+  }
 }
 
 onMounted(() => { loadConfirmations() })
 </script>
 
 <style scoped>
-.toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
-.confirmation-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.page-toolbar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; justify-content: space-between; }
+.toolbar-right { display: flex; gap: 8px; }
+.toolbar-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.confirmation-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .confirmation-card {
-  background: white; border-radius: 14px; overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: all 0.25s ease;
+  background: var(--bg-card); border-radius: var(--radius-md); overflow: hidden;
+  box-shadow: var(--shadow-sm); transition: all 0.2s ease;
 }
-.confirmation-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.07); }
+.confirmation-card:hover { box-shadow: var(--shadow-md); }
 .card-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;

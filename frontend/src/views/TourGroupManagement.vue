@@ -1,68 +1,72 @@
 <template>
-  <AppLayout activeMenu="tour-group-mgmt" breadcrumb="旅游团管理" :headerIcon="Suitcase">
-    <div class="toolbar">
-      <el-input v-model="searchText" placeholder="搜索旅游团名称或代码" clearable style="width:300px" @keyup.enter="searchGroups" />
-      <el-button type="primary" @click="searchGroups"><el-icon><Search /></el-icon> 搜索</el-button>
-      <el-button type="success" @click="showAddDialog = true"><el-icon><Plus /></el-icon> 新增旅游团</el-button>
+  <AppLayout activeMenu="tour-group-mgmt" :breadcrumb="$t('tourGroup.title')" :headerIcon="Suitcase">
+    <div class="page-toolbar">
+      <el-input v-model="searchText" :placeholder="$t('tourGroup.searchPlaceholder')" clearable style="width:300px" @keyup.enter="searchGroups" />
+      <div class="toolbar-right">
+        <el-button @click="searchGroups"><el-icon><Search /></el-icon> {{ $t('common.search') }}</el-button>
+        <el-button type="primary" @click="showAddDialog = true"><el-icon><Plus /></el-icon> {{ $t('tourGroup.createGroup') }}</el-button>
+      </div>
     </div>
-    <el-table :data="filteredGroups" class="data-table">
-      <el-table-column prop="group_code" label="旅游团代码" width="130" />
-      <el-table-column prop="route_code" label="路线代码" width="100" />
-      <el-table-column prop="route_name" label="路线名称" min-width="180" />
-      <el-table-column prop="departure_date" label="出发日期" width="120" />
-      <el-table-column prop="deadline_date" label="报名截止" width="120" />
-      <el-table-column prop="max_capacity" label="最大容量" width="100" />
-      <el-table-column prop="adult_price" label="成人价" width="100">
-        <template #default="scope">¥{{ scope.row.adult_price }}</template>
-      </el-table-column>
-      <el-table-column prop="child_price" label="儿童价" width="100">
-        <template #default="scope">¥{{ scope.row.child_price }}</template>
-      </el-table-column>
-      <el-table-column prop="is_public" label="公开" width="80">
-        <template #default="scope">
-          <el-tag :type="scope.row.is_public ? 'success' : 'info'" effect="dark" size="small" round>
-            {{ scope.row.is_public ? '是' : '否' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="220" fixed="right">
-        <template #default="scope">
-          <el-button size="small" @click="editGroup(scope.row)">编辑</el-button>
-          <el-button size="small" type="warning" plain @click="editPrices(scope.row)">价格</el-button>
-          <el-button size="small" :type="scope.row.is_public ? 'success' : 'info'" plain @click="togglePublic(scope.row)">
-            {{ scope.row.is_public ? '公开' : '不公开' }}
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="page-card">
+      <el-table :data="filteredGroups" class="data-table">
+        <el-table-column prop="group_code" :label="$t('tourGroup.code')" width="130" />
+        <el-table-column prop="route_code" :label="$t('tourGroup.routeCode')" width="100" />
+        <el-table-column prop="route_name" :label="$t('tourGroup.routeName')" min-width="180" />
+        <el-table-column prop="departure_date" :label="$t('tourGroup.departureDate')" width="120" />
+        <el-table-column prop="deadline_date" :label="$t('tourGroup.deadlineDate')" width="120" />
+        <el-table-column prop="max_capacity" :label="$t('tourGroup.maxCapacity')" width="100" />
+        <el-table-column prop="adult_price" :label="$t('tourGroup.adultPrice')" width="100">
+          <template #default="scope">¥{{ scope.row.adult_price }}</template>
+        </el-table-column>
+        <el-table-column prop="child_price" :label="$t('tourGroup.childPrice')" width="100">
+          <template #default="scope">¥{{ scope.row.child_price }}</template>
+        </el-table-column>
+        <el-table-column prop="is_public" :label="$t('tourGroup.isPublic')" width="80">
+          <template #default="scope">
+            <el-tag :type="scope.row.is_public ? 'success' : 'info'" effect="dark" size="small" round>
+              {{ scope.row.is_public ? $t('tourGroup.yes') : $t('tourGroup.no') }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="$t('common.operation')" width="220" fixed="right">
+          <template #default="scope">
+            <el-button size="small" @click="editGroup(scope.row)">{{ $t('tourGroup.edit') }}</el-button>
+            <el-button size="small" type="warning" plain @click="editPrices(scope.row)">{{ $t('tourGroup.price') }}</el-button>
+            <el-button size="small" :type="scope.row.is_public ? 'success' : 'info'" plain @click="togglePublic(scope.row)">
+              {{ scope.row.is_public ? $t('tourGroup.yes') : $t('tourGroup.no') }}
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
   </AppLayout>
-  <el-dialog v-model="showAddDialog" :title="isEditing ? '编辑旅游团' : '新增旅游团'" width="550px">
-    <el-form :model="groupForm" label-width="110px">
-      <el-form-item label="旅游团代码"><el-input v-model="groupForm.group_code" /></el-form-item>
-      <el-form-item label="路线">
-        <el-select v-model="groupForm.route_id" placeholder="请选择路线" style="width:100%">
+  <el-dialog v-model="showAddDialog" :title="isEditing ? $t('tourGroup.editGroup') : $t('tourGroup.newGroup')" width="550px">
+    <el-form :model="groupForm" :label-width="$t('common.enabled').includes('Enabled') ? '140px' : '110px'">
+      <el-form-item :label="$t('tourGroup.groupCodeLabel')"><el-input v-model="groupForm.group_code" /></el-form-item>
+      <el-form-item :label="$t('tourGroup.routeLabel')">
+        <el-select v-model="groupForm.route_id" :placeholder="$t('common.select')" style="width:100%">
           <el-option v-for="r in routes" :key="r.id" :label="`${r.route_code} - ${r.route_name}`" :value="r.id" />
         </el-select>
       </el-form-item>
-      <el-form-item label="出发日期"><el-date-picker v-model="groupForm.departure_date" type="date" style="width:100%" value-format="YYYY-MM-DD" /></el-form-item>
-      <el-form-item label="报名截止日期"><el-date-picker v-model="groupForm.deadline_date" type="date" style="width:100%" value-format="YYYY-MM-DD" /></el-form-item>
-      <el-form-item label="最大容量"><el-input-number v-model="groupForm.max_capacity" :min="1" style="width:100%" /></el-form-item>
-      <el-form-item label="成人价格"><el-input-number v-model="groupForm.adult_price" :min="0" :precision="2" style="width:100%" /></el-form-item>
-      <el-form-item label="儿童价格"><el-input-number v-model="groupForm.child_price" :min="0" :precision="2" style="width:100%" /></el-form-item>
+      <el-form-item :label="$t('tourGroup.departureDate')"><el-date-picker v-model="groupForm.departure_date" type="date" style="width:100%" value-format="YYYY-MM-DD" /></el-form-item>
+      <el-form-item :label="$t('tourGroup.deadlineDate')"><el-date-picker v-model="groupForm.deadline_date" type="date" style="width:100%" value-format="YYYY-MM-DD" /></el-form-item>
+      <el-form-item :label="$t('tourGroup.capacityLabel')"><el-input-number v-model="groupForm.max_capacity" :min="1" style="width:100%" /></el-form-item>
+      <el-form-item :label="$t('tourGroup.adultPriceLabel')"><el-input-number v-model="groupForm.adult_price" :min="0" :precision="2" style="width:100%" /></el-form-item>
+      <el-form-item :label="$t('tourGroup.childPriceLabel')"><el-input-number v-model="groupForm.child_price" :min="0" :precision="2" style="width:100%" /></el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="showAddDialog = false">取消</el-button>
-      <el-button type="primary" @click="saveGroup">保存</el-button>
+      <el-button @click="showAddDialog = false">{{ $t('common.cancel') }}</el-button>
+      <el-button type="primary" @click="saveGroup">{{ $t('common.save') }}</el-button>
     </template>
   </el-dialog>
-  <el-dialog v-model="showPriceDialog" title="编辑价格" width="400px">
-    <el-form :model="priceForm" label-width="100px">
-      <el-form-item label="成人价格"><el-input-number v-model="priceForm.adult_price" :min="0" :precision="2" style="width:100%" /></el-form-item>
-      <el-form-item label="儿童价格"><el-input-number v-model="priceForm.child_price" :min="0" :precision="2" style="width:100%" /></el-form-item>
+  <el-dialog v-model="showPriceDialog" :title="$t('tourGroup.priceTitle')" width="400px">
+    <el-form :model="priceForm" :label-width="$t('common.enabled').includes('Enabled') ? '120px' : '100px'">
+      <el-form-item :label="$t('tourGroup.adultPriceLabel')"><el-input-number v-model="priceForm.adult_price" :min="0" :precision="2" style="width:100%" /></el-form-item>
+      <el-form-item :label="$t('tourGroup.childPriceLabel')"><el-input-number v-model="priceForm.child_price" :min="0" :precision="2" style="width:100%" /></el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="showPriceDialog = false">取消</el-button>
-      <el-button type="primary" @click="savePrices">保存</el-button>
+      <el-button @click="showPriceDialog = false">{{ $t('common.cancel') }}</el-button>
+      <el-button type="primary" @click="savePrices">{{ $t('common.save') }}</el-button>
     </template>
   </el-dialog>
 </template>
@@ -194,7 +198,9 @@ onMounted(() => { loadGroups(); loadRoutes() })
 </script>
 
 <style scoped>
-.toolbar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
+.page-toolbar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; justify-content: space-between; }
+.toolbar-right { display: flex; gap: 8px; }
+.page-card { background: var(--bg-card); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; }
 .data-table { width: 100%; }
 .data-table :deep(.el-table__header th) { background: #f8fafc; color: #475569; font-weight: 600; }
 </style>

@@ -7,3 +7,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt_secret_key'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
+
+
+class MySQLConfig(Config):
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://root:password@localhost:3306/tourist?charset=utf8mb4'

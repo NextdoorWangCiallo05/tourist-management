@@ -1,92 +1,71 @@
 <template>
-  <AppLayout activeMenu="dashboard" breadcrumb="首页概览" :headerIcon="Odometer">
-    <div class="welcome-banner">
+  <AppLayout activeMenu="dashboard" :breadcrumb="$t('dashboard.title')" :headerIcon="Monitor">
+    <div class="welcome-section">
       <div class="welcome-text">
-        <h2>{{ greeting }}，{{ displayName }} 👋</h2>
-        <p>欢迎回来，以下是系统总览</p>
+        <h2>{{ $t('dashboard.welcome', { greeting: greeting, name: displayName }) }}</h2>
+        <p>{{ $t('common.todayIs') }} {{ todayStr }}，{{ $t('common.systemNormal') }}</p>
       </div>
-      <div class="welcome-stats">
-        <div class="welcome-stat-item">
-          <span class="welcome-stat-value">{{ overview.total_applications }}</span>
-          <span class="welcome-stat-label">总申请</span>
-        </div>
-        <div class="welcome-stat-divider"></div>
-        <div class="welcome-stat-item">
-          <span class="welcome-stat-value">{{ overview.total_participants }}</span>
-          <span class="welcome-stat-label">总参加者</span>
-        </div>
-        <div class="welcome-stat-divider"></div>
-        <div class="welcome-stat-item">
-          <span class="welcome-stat-value">{{ overview.total_groups }}</span>
-          <span class="welcome-stat-label">总旅游团</span>
-        </div>
-        <div class="welcome-stat-divider"></div>
-        <div class="welcome-stat-item">
-          <span class="welcome-stat-value">¥{{ overview.today_payments }}</span>
-          <span class="welcome-stat-label">总收款</span>
+      <div class="welcome-stats-mini">
+        <div class="mini-stat" v-for="s in miniStats" :key="s.label">
+          <span class="mini-value">{{ s.value }}</span>
+          <span class="mini-label">{{ s.label }}</span>
         </div>
       </div>
     </div>
 
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon-wrap blue"><el-icon><Document /></el-icon></div>
-        <div class="stat-info">
-          <span class="stat-value">{{ overview.total_applications }}</span>
-          <span class="stat-label">申请总数</span>
+      <div class="stat-card" v-for="stat in stats" :key="stat.label">
+        <div class="stat-body">
+          <span class="stat-value">{{ stat.value }}</span>
+          <span class="stat-label">{{ stat.label }}</span>
         </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrap green"><el-icon><User /></el-icon></div>
-        <div class="stat-info">
-          <span class="stat-value">{{ overview.total_participants }}</span>
-          <span class="stat-label">参加者总数</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrap purple"><el-icon><Wallet /></el-icon></div>
-        <div class="stat-info">
-          <span class="stat-value">¥{{ overview.today_payments }}</span>
-          <span class="stat-label">总收款金额</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrap orange"><el-icon><Suitcase /></el-icon></div>
-        <div class="stat-info">
-          <span class="stat-value">{{ overview.total_groups }}</span>
-          <span class="stat-label">旅游团总数</span>
+        <div class="stat-icon" :style="{ background: stat.bg, color: stat.color }">
+          <el-icon :size="20"><component :is="stat.icon" /></el-icon>
         </div>
       </div>
     </div>
 
     <div class="charts-grid">
       <div class="chart-card">
-        <div class="chart-header"><el-icon><DataAnalysis /></el-icon><h3>申请状态分布</h3></div>
-        <div class="chart-body"><v-chart :option="chartStatus" style="height:280px" /></div>
-       </div>
-       <div class="chart-card">
-         <div class="chart-header"><el-icon><TrendCharts /></el-icon><h3>近7日申请趋势</h3></div>
-         <div class="chart-body"><v-chart :option="chartTrend" style="height:280px" /></div>
+        <div class="chart-title">{{ $t('dashboard.chartStatus') }}</div>
+        <div class="chart-body"><v-chart :option="chartStatus" style="height:260px" /></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">{{ $t('dashboard.chartTrend') }}</div>
+        <div class="chart-body"><v-chart :option="chartTrend" style="height:260px" /></div>
       </div>
     </div>
 
-    <div class="content-grid">
-      <div class="quick-section">
-        <div class="section-header"><el-icon><Lightning /></el-icon><h3>快捷操作</h3></div>
-        <div class="quick-actions">
-          <button class="action-btn primary" @click="navigate('/applications/create')"><el-icon><CirclePlus /></el-icon><span>新建申请</span></button>
-          <button class="action-btn" @click="navigate('/tour-groups')"><el-icon><Search /></el-icon><span>查询旅游团</span></button>
-          <button class="action-btn" @click="navigate('/applications')"><el-icon><List /></el-icon><span>申请列表</span></button>
-          <button class="action-btn" @click="navigate('/audit-logs')"><el-icon><List /></el-icon><span>操作日志</span></button>
+    <div class="bottom-grid">
+      <div class="bottom-card">
+        <div class="card-title">{{ $t('dashboard.quickActions') }}</div>
+        <div class="quick-grid">
+          <button class="quick-btn" @click="navigate('/applications/create')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>{{ $t('dashboard.newApp') }}</span>
+          </button>
+          <button class="quick-btn" @click="navigate('/tour-groups')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>{{ $t('dashboard.searchGroups') }}</span>
+          </button>
+          <button class="quick-btn" @click="navigate('/applications')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>{{ $t('dashboard.appList') }}</span>
+          </button>
+          <button class="quick-btn" @click="navigate('/audit-logs')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span>{{ $t('dashboard.auditLogs') }}</span>
+          </button>
         </div>
       </div>
-      <div class="info-section">
-        <div class="section-header"><el-icon><Bell /></el-icon><h3>待办提醒</h3></div>
-        <div class="info-list">
-          <div class="info-item" v-for="(item, idx) in reminders" :key="idx">
-            <el-tag size="small" :type="item.type" effect="dark" round>{{ item.tag }}</el-tag>
-            <span class="info-text">{{ item.text }}</span>
+      <div class="bottom-card">
+        <div class="card-title">{{ $t('dashboard.reminders') }}</div>
+        <div class="reminder-list">
+          <div class="reminder-item" v-for="(item, idx) in reminders" :key="idx">
+            <span class="reminder-dot" :style="{ background: dotColors[item.type] || '#94a3b8' }"></span>
+            <span class="reminder-text">{{ item.text }}</span>
           </div>
+          <div v-if="reminders.length === 0" class="reminder-empty">{{ $t('dashboard.noReminders') }}</div>
         </div>
       </div>
     </div>
@@ -103,36 +82,45 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { PieChart, LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from 'echarts/components'
+import { useI18n } from 'vue-i18n'
 import {
-  Monitor, Plus, Document, Search, Suitcase, MapLocation,
-  Printer, Download, SwitchButton, Odometer, Calendar,
-  User, Wallet, Lightning, CirclePlus,
-  List, Bell, DataAnalysis, TrendCharts
+  Monitor, Document, User, Wallet, Odometer, Calendar
 } from '@element-plus/icons-vue'
 import AppLayout from '../components/AppLayout.vue'
 
 use([CanvasRenderer, PieChart, LineChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent])
 
+const { t } = useI18n()
 const router = useRouter()
 const userStore = useUserStore()
-
 const displayName = computed(() => userStore.displayName)
 const greeting = computed(() => {
-  const hour = new Date().getHours()
-  if (hour < 12) return '上午好'
-  if (hour < 18) return '下午好'
-  return '晚上好'
+  const h = new Date().getHours()
+  return h < 12 ? t('common.morning') : h < 18 ? t('common.afternoon') : t('common.evening')
 })
+const todayStr = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })
 
-const overview = ref({
-  total_applications: 0, total_groups: 0, total_routes: 0,
-  total_participants: 0, today_applications: 0, today_payments: '0.00'
-})
+const navigate = (path) => router.push(path)
+
+const overview = ref({ total_applications: 0, total_groups: 0, total_participants: 0 })
 const chartStatus = ref({})
 const chartTrend = ref({})
-const reminders = ref([{ type: 'info', tag: '通知', text: '加载中...' }])
+const reminders = ref([])
 
-const navigate = (path) => { router.push(path) }
+const dotColors = { warning: '#f59e0b', info: '#3b82f6', success: '#22c55e', danger: '#ef4444' }
+
+const stats = computed(() => [
+  { value: overview.value.total_applications, label: t('dashboard.totalApps'), icon: Document, bg: 'rgba(79,110,247,0.1)', color: '#4f6ef7' },
+  { value: overview.value.total_participants, label: t('dashboard.totalParticipants'), icon: User, bg: 'rgba(16,185,129,0.1)', color: '#10b981' },
+  { value: `¥${Number(overview.value.today_payments || 0).toFixed(0)}`, label: t('dashboard.todayPayments'), icon: Wallet, bg: 'rgba(245,158,11,0.1)', color: '#f59e0b' },
+  { value: overview.value.total_groups, label: t('dashboard.totalGroups'), icon: Odometer, bg: 'rgba(139,92,246,0.1)', color: '#8b5cf6' },
+])
+
+const miniStats = computed(() => [
+  { value: overview.value.total_applications, label: t('dashboard.totalApps') },
+  { value: overview.value.total_participants, label: t('dashboard.totalParticipants') },
+  { value: overview.value.total_groups, label: t('dashboard.totalGroups') },
+])
 
 const loadStats = async () => {
   try {
@@ -142,130 +130,202 @@ const loadStats = async () => {
     const dt = data.daily_trend || []
     chartStatus.value = {
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-      legend: { bottom: 0, data: ['处理中', '已完成', '已取消'] },
+      legend: { bottom: 0, data: ['处理中', '已完成', '已取消'], textStyle: { fontSize: 12, color: '#5b677d' } },
       series: [{
-        type: 'pie', radius: ['35%', '60%'], center: ['50%', '45%'],
-        avoidLabelOverlap: false, itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
-        label: { show: true, formatter: '{b}\n{c}', fontSize: 12 },
-        data: sd.map(d => ({
-          name: d.name === 'pending' ? '处理中' : d.name === 'completed' ? '已完成' : '已取消',
-          value: d.value
-        })),
-        color: ['#f59e0b', '#22c55e', '#ef4444']
+        type: 'pie', radius: ['40%', '62%'], center: ['50%', '45%'],
+        avoidLabelOverlap: false, itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+        label: { show: true, formatter: '{b}\n{c}', fontSize: 11, color: '#5b677d' },
+        data: sd.map(d => ({ name: d.name === 'pending' ? '处理中' : d.name === 'completed' ? '已完成' : '已取消', value: d.value })),
+        color: ['#f59e0b', '#10b981', '#ef4444']
       }]
     }
     chartTrend.value = {
       tooltip: { trigger: 'axis' },
-      grid: { left: 40, right: 20, bottom: 30, top: 20 },
-      xAxis: { type: 'category', data: dt.map(d => d.date.slice(5)), axisLabel: { fontSize: 11 } },
-      yAxis: { type: 'value', minInterval: 1 },
+      grid: { left: 40, right: 16, bottom: 24, top: 12 },
+      xAxis: { type: 'category', data: dt.map(d => d.date.slice(5)), axisLabel: { fontSize: 11 }, axisLine: { show: false }, axisTick: { show: false } },
+      yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#f0f0f0' } }, axisLabel: { fontSize: 11 } },
       series: [{
         type: 'line', smooth: true, data: dt.map(d => d.count),
-        areaStyle: { color: 'rgba(59,130,246,0.15)' },
-        lineStyle: { color: '#3b82f6', width: 3 },
-        itemStyle: { color: '#3b82f6' },
-        symbol: 'circle', symbolSize: 8
+        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(79,110,247,0.2)' }, { offset: 1, color: 'rgba(79,110,247,0)' }] } },
+        lineStyle: { color: '#4f6ef7', width: 2.5 },
+        itemStyle: { color: '#4f6ef7' },
+        symbol: 'circle', symbolSize: 6
       }]
     }
-    const items = []
     const pending = sd.find(d => d.name === 'pending')
-    if (pending && pending.value > 0) items.push({ type: 'warning', tag: '待办', text: `${pending.value}笔申请处理中` })
-    if (data.total_groups > 0) items.push({ type: 'info', tag: '进行中', text: `${data.total_groups}个旅游团` })
-    if (items.length === 0) items.push({ type: 'success', tag: '完成', text: '系统运行正常' })
+    const items = []
+    if (pending?.value > 0) items.push({ type: 'warning', text: t('dashboard.pendingApps', { count: pending.value }) })
+    if (data.total_groups > 0) items.push({ type: 'info', text: t('dashboard.groupsActive', { count: data.total_groups }) })
+    if (items.length === 0) items.push({ type: 'success', text: t('dashboard.allGood') })
     reminders.value = items
-  } catch (error) {
-    console.error('Failed to load stats:', error)
-  }
+  } catch (e) { console.error(e) }
 }
 
 onMounted(() => { loadStats() })
 </script>
 
 <style scoped>
-.welcome-banner {
-  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
-  border-radius: 16px;
-  padding: 28px 32px;
+.welcome-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-  color: white;
-  position: relative;
-  overflow: hidden;
 }
-.welcome-banner::before {
-  content: ''; position: absolute; top: -50%; right: -10%;
-  width: 300px; height: 300px; background: rgba(255,255,255,0.05); border-radius: 50%;
+.welcome-text h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
 }
-.welcome-banner::after {
-  content: ''; position: absolute; bottom: -30%; right: 20%;
-  width: 200px; height: 200px; background: rgba(255,255,255,0.03); border-radius: 50%;
+.welcome-text p {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
 }
-.welcome-text { position: relative; z-index: 1; }
-.welcome-text h2 { font-size: 22px; font-weight: 700; margin: 0 0 6px; }
-.welcome-text p { font-size: 14px; margin: 0; opacity: 0.8; }
-.welcome-stats { display: flex; align-items: center; gap: 24px; position: relative; z-index: 1; }
-.welcome-stat-item { display: flex; flex-direction: column; align-items: center; }
-.welcome-stat-value { font-size: 28px; font-weight: 700; line-height: 1.2; }
-.welcome-stat-label { font-size: 12px; opacity: 0.75; margin-top: 2px; }
-.welcome-stat-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.2); }
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+.welcome-stats-mini {
+  display: flex;
+  gap: 20px;
+}
+.mini-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.mini-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.mini-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
 .stat-card {
-  background: white; border-radius: 14px; padding: 22px 24px;
-  display: flex; align-items: center; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  transition: all 0.25s ease;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
 }
-.stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-.stat-icon-wrap {
-  width: 48px; height: 48px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+.stat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
-.stat-icon-wrap .el-icon { font-size: 22px; }
-.stat-icon-wrap.blue { background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(30,64,175,0.12)); color: #3b82f6; }
-.stat-icon-wrap.green { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(22,163,74,0.12)); color: #22c55e; }
-.stat-icon-wrap.purple { background: linear-gradient(135deg, rgba(168,85,247,0.12), rgba(126,34,206,0.12)); color: #a855f7; }
-.stat-icon-wrap.orange { background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(234,88,12,0.12)); color: #f97316; }
-.stat-info { flex: 1; display: flex; flex-direction: column; }
-.stat-info .stat-value { font-size: 26px; font-weight: 700; color: #0f172a; line-height: 1.2; }
-.stat-info .stat-label { font-size: 13px; color: #94a3b8; margin-top: 2px; }
-.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-.chart-card { background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-.chart-header {
-  display: flex; align-items: center; gap: 8px; padding: 14px 20px;
-  background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #0f172a; font-size: 15px;
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
 }
-.chart-header .el-icon { color: #3b82f6; font-size: 18px; }
-.chart-header h3 { margin: 0; font-size: 15px; }
-.chart-body { padding: 16px; }
-.content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.quick-section, .info-section { background: white; border-radius: 14px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-.section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
-.section-icon { font-size: 18px; color: #3b82f6; }
-.section-header h3 { font-size: 16px; font-weight: 600; color: #0f172a; margin: 0; }
-.quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.action-btn {
-  display: flex; align-items: center; gap: 10px; padding: 16px 20px;
-  border: 1px solid #e2e8f0; border-radius: 12px; background: white;
-  cursor: pointer; transition: all 0.2s ease; font-size: 14px; color: #475569;
+.stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
 }
-.action-btn:hover { border-color: #3b82f6; background: rgba(59,130,246,0.03); transform: translateY(-1px); }
-.action-btn .el-icon { font-size: 20px; color: #64748b; }
-.action-btn.primary { background: linear-gradient(135deg, #3b82f6, #1e40af); border: none; color: white; }
-.action-btn.primary .el-icon { color: white; }
-.action-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59,130,246,0.3); }
-.info-list { display: flex; flex-direction: column; gap: 12px; }
-.info-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 12px; border-radius: 10px; background: #f8fafc; transition: all 0.2s ease;
+.stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.info-item:hover { background: #f1f5f9; }
-.info-text { font-size: 14px; color: #334155; }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.chart-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.chart-title {
+  padding: 16px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+}
+.chart-body { padding: 12px; }
+
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.bottom-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+.quick-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.quick-btn svg { flex-shrink: 0; }
+
+.reminder-list { display: flex; flex-direction: column; gap: 10px; }
+.reminder-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.reminder-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.reminder-text { font-size: 13.5px; color: var(--text-secondary); }
+.reminder-empty { font-size: 13.5px; color: var(--text-muted); padding: 10px 0; }
 
 @media (max-width: 768px) {
-  .stats-grid, .charts-grid, .content-grid { grid-template-columns: 1fr; }
-  .welcome-banner { flex-direction: column; gap: 16px; text-align: center; }
-  .welcome-stats { gap: 16px; }
-  .quick-actions { grid-template-columns: 1fr; }
+  .stats-grid, .charts-grid, .bottom-grid { grid-template-columns: 1fr; }
+  .welcome-section { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .quick-grid { grid-template-columns: 1fr; }
 }
 </style>

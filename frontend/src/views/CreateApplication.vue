@@ -1,97 +1,97 @@
 <template>
-  <AppLayout activeMenu="create-app" breadcrumb="新建申请" :headerIcon="Plus">
+  <AppLayout activeMenu="create-app" :breadcrumb="$t('application.create')" :headerIcon="Plus">
     <div class="form-card">
-      <div class="form-card-header"><el-icon><InfoFilled /></el-icon> 选择旅游团</div>
+      <div class="form-card-header"><el-icon><InfoFilled /></el-icon> {{ $t('application.selectGroup') }}</div>
       <div class="form-card-body">
         <el-form :model="form" label-width="100px">
-          <el-form-item label="旅游团">
-            <el-select v-model="form.group_id" placeholder="请选择旅游团" style="width:100%" @change="onGroupChange">
+          <el-form-item :label="$t('application.group')">
+            <el-select v-model="form.group_id" :placeholder="$t('common.select')" style="width:100%" @change="onGroupChange">
               <el-option v-for="g in groups" :key="g.id" :label="`${g.group_code} - ${g.route_name}`" :value="g.id" />
             </el-select>
           </el-form-item>
-          <el-form-item label="责任人">
-            <el-input v-model="form.responsible_name" placeholder="请输入责任人姓名" />
+          <el-form-item :label="$t('application.responsiblePerson')">
+            <el-input v-model="form.responsible_name" :placeholder="$t('common.placeholder')" />
           </el-form-item>
-          <el-form-item label="联系电话">
-            <el-input v-model="form.responsible_phone" placeholder="请输入联系电话" />
+          <el-form-item :label="$t('application.responsiblePhone')">
+            <el-input v-model="form.responsible_phone" :placeholder="$t('common.placeholder')" />
           </el-form-item>
         </el-form>
       </div>
     </div>
     <div v-if="selectedGroup" class="form-card">
-      <div class="form-card-header"><el-icon><UserFilled /></el-icon> 参加者信息</div>
+      <div class="form-card-header"><el-icon><UserFilled /></el-icon> {{ $t('application.participantInfo') }}</div>
       <div class="form-card-body">
         <div class="participant-inputs">
           <div class="participant-row">
-            <el-input v-model="newParticipant.name" placeholder="姓名" style="width:140px" />
+            <el-input v-model="newParticipant.name" :placeholder="$t('common.name')" style="width:140px" />
             <el-select v-model="newParticipant.id_type" style="width:120px">
               <el-option label="身份证" value="身份证" />
               <el-option label="护照" value="护照" />
             </el-select>
-            <el-input v-model="newParticipant.id_number" placeholder="证件号码" style="width:200px" />
-            <el-input v-model="newParticipant.phone" placeholder="电话" style="width:140px" />
+            <el-input v-model="newParticipant.id_number" :placeholder="$t('application.idNumberCol')" style="width:200px" />
+            <el-input v-model="newParticipant.phone" :placeholder="$t('common.phone')" style="width:140px" />
             <el-radio-group v-model="newParticipant.is_adult">
-              <el-radio :label="true">成人</el-radio>
-              <el-radio :label="false">儿童</el-radio>
+              <el-radio :label="true">{{ $t('common.adult') }}</el-radio>
+              <el-radio :label="false">{{ $t('common.child') }}</el-radio>
             </el-radio-group>
-            <el-button type="primary" @click="addParticipant"><el-icon><Plus /></el-icon> 添加</el-button>
+            <el-button type="primary" @click="addParticipant"><el-icon><Plus /></el-icon> {{ $t('common.add') }}</el-button>
           </div>
         </div>
         <el-table :data="participants" class="data-table" style="margin-top:12px">
-          <el-table-column prop="name" label="姓名" width="120" />
-          <el-table-column prop="id_type" label="证件类型" width="100" />
-          <el-table-column prop="id_number" label="证件号码" width="200" />
-          <el-table-column prop="phone" label="电话" width="140" />
-          <el-table-column prop="is_adult" label="类型" width="80">
+          <el-table-column prop="name" :label="$t('application.nameCol')" width="120" />
+          <el-table-column prop="id_type" :label="$t('application.idTypeCol')" width="100" />
+          <el-table-column prop="id_number" :label="$t('application.idNumberCol')" width="200" />
+          <el-table-column prop="phone" :label="$t('application.phoneCol')" width="140" />
+          <el-table-column prop="is_adult" :label="$t('application.typeCol')" width="80">
             <template #default="scope">
               <el-tag :type="scope.row.is_adult ? 'primary' : 'success'" size="small" effect="plain">
-                {{ scope.row.is_adult ? '成人' : '儿童' }}
+                {{ scope.row.is_adult ? $t('common.adult') : $t('common.child') }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="80">
+          <el-table-column :label="$t('application.actionCol')" width="80">
             <template #default="scope">
-              <el-button size="small" type="danger" plain @click="removeParticipant(scope.$index)">删除</el-button>
+              <el-button size="small" type="danger" plain @click="removeParticipant(scope.$index)">{{ $t('common.delete') }}</el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
     </div>
     <div v-if="selectedGroup" class="form-card">
-      <div class="form-card-header"><el-icon><Money /></el-icon> 费用预估</div>
+      <div class="form-card-header"><el-icon><Money /></el-icon> {{ $t('application.feeEstimate') }}</div>
       <div class="form-card-body">
         <div class="fee-grid">
           <div class="fee-item">
-            <span class="fee-label">成人单价</span>
+            <span class="fee-label">{{ $t('application.adultUnitPrice') }}</span>
             <span class="fee-value">¥{{ selectedGroup.adult_price }}</span>
           </div>
           <div class="fee-item">
-            <span class="fee-label">儿童单价</span>
+            <span class="fee-label">{{ $t('application.childUnitPrice') }}</span>
             <span class="fee-value">¥{{ selectedGroup.child_price }}</span>
           </div>
           <div class="fee-item">
-            <span class="fee-label">成人人数</span>
-            <span class="fee-value">{{ adultCount }} 人</span>
+            <span class="fee-label">{{ $t('application.adultCount') }}</span>
+            <span class="fee-value">{{ adultCount }} {{ $t('common.person') }}</span>
           </div>
           <div class="fee-item">
-            <span class="fee-label">儿童人数</span>
-            <span class="fee-value">{{ childCount }} 人</span>
+            <span class="fee-label">{{ $t('application.childCount') }}</span>
+            <span class="fee-value">{{ childCount }} {{ $t('common.person') }}</span>
           </div>
           <div class="fee-item total">
-            <span class="fee-label">预估总费用</span>
+            <span class="fee-label">{{ $t('application.estTotal') }}</span>
             <span class="fee-value highlight">¥{{ estimatedTotal }}</span>
           </div>
           <div class="fee-item">
-            <span class="fee-label">预估订金</span>
+            <span class="fee-label">{{ $t('application.estDeposit') }}</span>
             <span class="fee-value deposit">¥{{ estimatedDeposit }}</span>
           </div>
         </div>
       </div>
     </div>
     <div class="form-actions">
-      <el-button size="large" @click="navigate('/applications')"><el-icon><Back /></el-icon> 返回</el-button>
+      <el-button size="large" @click="navigate('/applications')"><el-icon><Back /></el-icon> {{ $t('common.back') }}</el-button>
       <el-button type="primary" size="large" :disabled="!canSubmit" @click="submitApplication">
-        <el-icon><CircleCheck /></el-icon> 提交申请
+        <el-icon><CircleCheck /></el-icon> {{ $t('application.submitApp') }}
       </el-button>
     </div>
   </AppLayout>
