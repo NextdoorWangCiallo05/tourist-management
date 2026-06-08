@@ -27,24 +27,44 @@ def login():
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
+    import re
     data = request.get_json()
     username = data.get('username', '').strip()
     password = data.get('password', '')
+    confirm = data.get('confirm_password', '')
     display_name = data.get('display_name', '').strip() or username
+    email = (data.get('email') or '').strip()
+    phone = (data.get('phone') or '').strip()
+
     if not username or not password:
         return fail('用户名和密码不能为空')
+    if not re.match(r'^[a-zA-Z0-9_\u4e00-\u9fa5]{2,20}$', username):
+        return fail('用户名须为2-20位字母、数字、中文或下划线')
     if len(password) < 6:
         return fail('密码长度不少于6位')
+    if confirm and password != confirm:
+        return fail('两次密码输入不一致')
+    if email and not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+        return fail('邮箱格式不正确')
     if User.query.filter_by(username=username).first():
         return fail('用户名已存在')
+
     user = User(username=username, password_hash=generate_password_hash(password),
-                display_name=display_name, role='operator')
+                display_name=display_name, role='operator',
+                email=email or None, phone=phone or None)
     db.session.add(user)
     db.session.commit()
     log = AuditLog(username=username, action='注册账户', target_type='user', target_id=username, detail=f'新用户注册 {username}')
     db.session.add(log)
     db.session.commit()
-    return ok({'username': username, 'display_name': display_name, 'role': 'operator'}, '注册成功')
+    # 注册后直接返回 token，自动登录
+    token = create_access_token(identity=username)
+    return ok({
+        'access_token': token,
+        'display_name': display_name,
+        'role': 'operator',
+        'username': username
+    }, '注册成功')
 
 
 @auth_bp.route('/users', methods=['GET'])
@@ -57,6 +77,7 @@ def list_users():
     users = User.query.all()
     return ok([{
         'id': u.id, 'username': u.username, 'display_name': u.display_name,
+        'email': u.email, 'phone': u.phone,
         'role': u.role, 'created_at': u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else ''
     } for u in users])
 

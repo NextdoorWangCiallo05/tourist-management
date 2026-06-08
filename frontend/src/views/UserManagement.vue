@@ -33,15 +33,17 @@
     </div>
   </AppLayout>
 
-  <el-dialog v-model="showCreateDialog" title="新建用户" width="420px">
+  <el-dialog v-model="showCreateDialog" :title="$t('userMgmt.newUser')" width="450px">
     <el-form :model="createForm" label-width="80px">
-      <el-form-item label="用户名"><el-input v-model="createForm.username" /></el-form-item>
-      <el-form-item label="显示名称"><el-input v-model="createForm.display_name" /></el-form-item>
-      <el-form-item label="密码"><el-input v-model="createForm.password" type="password" show-password /></el-form-item>
-      <el-form-item label="角色">
+      <el-form-item :label="$t('userMgmt.username')"><el-input v-model="createForm.username" placeholder="2-20位字母数字或中文" /></el-form-item>
+      <el-form-item :label="$t('userMgmt.displayName')"><el-input v-model="createForm.display_name" /></el-form-item>
+      <el-form-item label="邮箱"><el-input v-model="createForm.email" placeholder="email@example.com" /></el-form-item>
+      <el-form-item label="手机号"><el-input v-model="createForm.phone" placeholder="手机号（选填）" /></el-form-item>
+      <el-form-item :label="$t('login.password')"><el-input v-model="createForm.password" type="password" show-password placeholder="不少于6位" /></el-form-item>
+      <el-form-item :label="$t('userMgmt.role')">
         <el-select v-model="createForm.role" style="width:100%">
-          <el-option label="操作员" value="operator" />
-          <el-option label="管理员" value="admin" />
+          <el-option :label="$t('userMgmt.operator')" value="operator" />
+          <el-option :label="$t('userMgmt.admin')" value="admin" />
         </el-select>
       </el-form-item>
     </el-form>
@@ -62,7 +64,7 @@ import AppLayout from '../components/AppLayout.vue'
 const users = ref([])
 const currentUser = ref(localStorage.getItem('displayName') || '')
 const showCreateDialog = ref(false)
-const createForm = ref({ username: '', display_name: '', password: '', role: 'operator' })
+const createForm = ref({ username: '', display_name: '', email: '', phone: '', password: '', role: 'operator' })
 
 const loadUsers = async () => {
   try {
@@ -72,7 +74,7 @@ const loadUsers = async () => {
 }
 
 const createUser = () => {
-  createForm.value = { username: '', display_name: '', password: '', role: 'operator' }
+  createForm.value = { username: '', display_name: '', email: '', phone: '', password: '', role: 'operator' }
   showCreateDialog.value = true
 }
 

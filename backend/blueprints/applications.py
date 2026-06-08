@@ -74,6 +74,20 @@ def create():
                     child_count=data['child_count'], deposit_amount=deposit,
                     balance_amount=round(total - deposit, 2), status='pending')
     db.session.add(a)
+    db.session.flush()
+    # 同步保存创建时录入的参加者
+    participants_data = data.get('participants', [])
+    for i, p in enumerate(participants_data):
+        participant = Participant(
+            application_id=a.id, name=p['name'],
+            id_type=p.get('id_type', '身份证'), id_number=p.get('id_number', ''),
+            is_adult=p.get('is_adult', True),
+            phone_number=p.get('phone_number', '') or p.get('phone', ''),
+            gender=p.get('gender', ''), address=p.get('address', ''),
+            # 第一个参加者设为责任人
+            is_responsible=(i == 0)
+        )
+        db.session.add(participant)
     db.session.commit()
     log_audit('新建申请', 'application', no, f'申请编号 {no}，订金 {deposit}')
     return created({'application_no': no, 'deposit_amount': deposit, 'total_price': total}, '申请创建成功')
@@ -111,44 +125,31 @@ def detail(app_no):
 
 @apps_bp.route('/<app_no>/participants', methods=['POST'])
 @jwt_required()
-def add_participants(app_no):
-    """新增参加者视为新申请处理"""
-    from .groups import calc_deposit_rate as calc_rate
+def add_existing_participants(app_no):
+    """添加参加者到当前申请（不是创建新申请）"""
     a = Application.query.filter_by(application_no=app_no).first()
     if not a: return not_found('申请不存在')
-    g = TourGroup.query.get(a.tour_group_id)
     data = request.get_json()
     items = data if isinstance(data, list) else data.get('participants', [data])
-    today = datetime.now().date()
-    # 为每个新参加者创建新申请
-    created_apps = []
+    count = 0
     for p in items:
-        rate = calc_rate((g.departure_date - today).days)
-        is_adult = p.get('is_adult', True)
-        price = g.adult_price if is_adult else g.child_price
-        deposit = round(price * rate, 2)
-        balance = round(price - deposit, 2)
-        no = gen_no()
-        new_app = Application(
-            application_no=no, tour_group_id=g.id,
-            responsible_name=p['name'], responsible_phone=p.get('phone_number', '') or p.get('phone', ''),
-            adult_count=1 if is_adult else 0, child_count=0 if is_adult else 1,
-            deposit_amount=deposit, balance_amount=balance, status='pending'
-        )
-        db.session.add(new_app)
-        db.session.flush()
         participant = Participant(
-            application_id=new_app.id, name=p['name'],
+            application_id=a.id, name=p['name'],
             id_type=p.get('id_type', '身份证'), id_number=p.get('id_number', ''),
-            is_adult=is_adult, phone_number=p.get('phone_number', '') or p.get('phone', ''),
+            is_adult=p.get('is_adult', True),
+            phone_number=p.get('phone_number', '') or p.get('phone', ''),
             gender=p.get('gender', ''), address=p.get('address', ''),
-            is_responsible=True
+            is_responsible=False
         )
         db.session.add(participant)
-        created_apps.append(no)
+        count += 1
+    # 更新人数
+    total_adult = Participant.query.filter_by(application_id=a.id, is_adult=True, status='active').count()
+    total_child = Participant.query.filter_by(application_id=a.id, is_adult=False, status='active').count()
+    a.adult_count = total_adult
+    a.child_count = total_child
     db.session.commit()
-    return created({'application_nos': created_apps, 'count': len(created_apps)},
-                   f'已为 {len(created_apps)} 名新参加者创建独立申请')
+    return ok({'count': count}, f'已添加 {count} 名参加者')
 
 
 @apps_bp.route('/<app_no>/participants/import', methods=['POST'])
@@ -235,3 +236,39 @@ def cancel(app_no):
     log_audit('取消申请', 'application', app_no, f'取消，退款 {refund}')
     db.session.commit()
     return ok({'cancellation_fee': fee, 'refund_amount': refund}, '申请已取消')
+
+
+@apps_bp.route('/<app_no>', methods=['DELETE'])
+@jwt_required()
+def delete_app(app_no):
+    """物理删除申请及其关联数据"""
+    a = Application.query.filter_by(application_no=app_no).first()
+    if not a: return not_found('申请不存在')
+    # 删除关联数据
+    Participant.query.filter_by(application_id=a.id).delete()
+    PaymentRecord.query.filter_by(application_id=a.id).delete()
+    db.session.delete(a)
+    log_audit('删除申请', 'application', app_no, f'物理删除申请 {app_no}')
+    db.session.commit()
+    return ok(None, '申请已删除')
+
+
+@apps_bp.route('/batch-delete', methods=['POST'])
+@jwt_required()
+def batch_delete():
+    """批量物理删除申请"""
+    data = request.get_json()
+    nos = data.get('application_nos', [])
+    if not nos:
+        return fail('请选择要删除的申请')
+    count = 0
+    for no in nos:
+        a = Application.query.filter_by(application_no=no).first()
+        if a:
+            Participant.query.filter_by(application_id=a.id).delete()
+            PaymentRecord.query.filter_by(application_id=a.id).delete()
+            db.session.delete(a)
+            count += 1
+    log_audit('批量删除', 'application', ','.join(nos), f'批量删除 {count} 条申请')
+    db.session.commit()
+    return ok({'count': count}, f'已删除 {count} 条申请')

@@ -219,12 +219,13 @@ const completeApplication = async () => {
 
 const addParticipant = async () => {
   try {
-    const res = await request.post(`/applications/${application.value.application_no}/participants`, newParticipant.value)
+    await request.post(`/applications/${application.value.application_no}/participants`, newParticipant.value)
     showAddParticipant.value = false
     newParticipant.value = { name: '', id_type: '身份证', id_number: '', phone: '', is_adult: true }
-    ElMessage.success(`已创建新申请，编号: ${res.application_nos?.join(', ') || ''}`)
+    loadApplication()
+    ElMessage.success('参加者添加成功')
   } catch (error) {
-    ElMessage.error('创建申请失败')
+    ElMessage.error('添加失败')
   }
 }
 

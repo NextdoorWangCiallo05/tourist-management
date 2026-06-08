@@ -169,26 +169,22 @@ const removeParticipant = (index) => {
 
 const submitApplication = async () => {
   try {
-    const adultCount = participants.value.filter(p => p.is_adult).length
-    const childCount = participants.value.filter(p => !p.is_adult).length
     const payload = {
       group_id: form.value.group_id,
       responsible_name: form.value.responsible_name,
       phone_number: form.value.responsible_phone,
-      adult_count: adultCount,
-      child_count: childCount
-    }
-    const res = await request.post('/applications', payload)
-    const appNo = res.application_no
-    const participantPayload = {
+      adult_count: adultCount.value,
+      child_count: childCount.value,
       participants: participants.value.map(p => ({
         name: p.name,
         id_number: p.id_number,
         phone_number: p.phone,
-        is_adult: p.is_adult
+        is_adult: p.is_adult,
+        id_type: p.id_type
       }))
     }
-    await request.post(`/applications/${appNo}/participants`, participantPayload)
+    const res = await request.post('/applications', payload)
+    const appNo = res.application_no
     ElMessage.success(`申请创建成功！申请编号: ${appNo}`)
     router.push(`/applications/detail/${appNo}`)
   } catch (error) {

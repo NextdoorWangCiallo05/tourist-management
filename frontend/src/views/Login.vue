@@ -46,11 +46,26 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showRegister" :title="$t('login.registerTitle')" width="420px">
-      <el-form :model="regForm" :label-width="locale === 'en' ? '100px' : '70px'">
-        <el-form-item :label="$t('login.username')"><el-input v-model="regForm.username" placeholder="4-20位字母或数字" /></el-form-item>
-        <el-form-item label="显示名称"><el-input v-model="regForm.display_name" placeholder="如：李四" /></el-form-item>
-        <el-form-item :label="$t('login.password')"><el-input v-model="regForm.password" type="password" show-password placeholder="不少于6位" /></el-form-item>
+    <el-dialog v-model="showRegister" :title="$t('login.registerTitle')" width="450px" :close-on-click-modal="false">
+      <el-form :model="regForm" :label-width="locale === 'en' ? '120px' : '80px'" :rules="regRules" ref="regFormRef" status-icon>
+        <el-form-item :label="$t('login.username')" prop="username">
+          <el-input v-model="regForm.username" :placeholder="locale === 'en' ? '2-20 chars, letters/numbers' : '2-20位字母或数字'" />
+        </el-form-item>
+        <el-form-item label="显示名称" prop="display_name">
+          <el-input v-model="regForm.display_name" :placeholder="locale === 'en' ? 'Display name' : '如：李四'" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="regForm.email" placeholder="email@example.com" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="regForm.phone" :placeholder="locale === 'en' ? 'Phone number' : '手机号码（选填）'" />
+        </el-form-item>
+        <el-form-item :label="$t('login.password')" prop="password">
+          <el-input v-model="regForm.password" type="password" show-password :placeholder="locale === 'en' ? 'At least 6 chars' : '不少于6位'" />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirm_password">
+          <el-input v-model="regForm.confirm_password" type="password" show-password :placeholder="locale === 'en' ? 'Confirm password' : '再次输入密码'" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showRegister = false">{{ $t('common.cancel') }}</el-button>
@@ -71,14 +86,38 @@ import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const store = useUserStore()
-const { locale } = useI18n()
+const { t, locale } = useI18n()
 const form = ref({ username: '', password: '' })
 const remember = ref(false)
 const loading = ref(false)
 const showForgot = ref(false)
 const showRegister = ref(false)
 const regLoading = ref(false)
-const regForm = ref({ username: '', display_name: '', password: '' })
+const regFormRef = ref(null)
+const regForm = ref({ username: '', display_name: '', email: '', phone: '', password: '', confirm_password: '' })
+const regRules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { pattern: /^[a-zA-Z0-9_\u4e00-\u9fa5]{2,20}$/, message: '2-20位字母、数字或中文', trigger: 'blur' }
+  ],
+  display_name: [
+    { required: true, message: '请输入显示名称', trigger: 'blur' }
+  ],
+  email: [
+    { pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '邮箱格式不正确', trigger: 'blur' }
+  ],
+  phone: [
+    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码不少于6位', trigger: 'blur' }
+  ],
+  confirm_password: [
+    { required: true, message: '请确认密码', trigger: 'blur' },
+    { validator: (rule, value, cb) => value !== regForm.value.password ? cb(new Error('两次密码不一致')) : cb(), trigger: 'blur' }
+  ]
+}
 
 const handleLogin = async () => {
   if (!form.value.username || !form.value.password) {
@@ -104,19 +143,22 @@ const handleLogin = async () => {
 }
 
 const handleRegister = async () => {
-  if (!regForm.value.username || !regForm.value.password) {
-    ElMessage.warning('用户名和密码不能为空')
+  if (!regFormRef.value) return
+  try {
+    await regFormRef.value.validate()
+  } catch {
     return
   }
   regLoading.value = true
   try {
-    await request.post('/register', regForm.value)
+    const res = await request.post('/register', regForm.value)
     showRegister.value = false
-    form.value.username = regForm.value.username
-    form.value.password = regForm.value.password
-    ElMessage.success('注册成功，请登录')
-  } catch {
-    ElMessage.error('注册失败')
+    // 自动登录
+    store.setUser(res.access_token, res.display_name, res.role)
+    ElMessage.success(t('login.registerTitle') + ' ' + t('common.success'))
+    router.push('/dashboard')
+  } catch (e) {
+    ElMessage.error(typeof e === 'string' ? e : '注册失败')
   } finally {
     regLoading.value = false
   }

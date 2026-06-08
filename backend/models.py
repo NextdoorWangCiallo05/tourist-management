@@ -91,6 +91,8 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     display_name = db.Column(db.String(50), default='操作员')
+    email = db.Column(db.String(100))
+    phone = db.Column(db.String(20))
     role = db.Column(db.String(20), default='operator')
     created_at = db.Column(db.DateTime, default=datetime.now)
 

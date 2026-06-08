@@ -75,7 +75,33 @@ const loadConfirmations = async () => {
 }
 
 const printAll = () => { window.print() }
-const printSingle = (appNo) => { ElMessage.info(`正在打印申请 ${appNo} 的确认书...`) }
+const printSingle = async (appNo) => {
+  const token = localStorage.getItem('token')
+  try {
+    const res = await fetch(`http://localhost:5000/api/confirmations/${appNo}/pdf`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (!res.ok) { ElMessage.error('打印失败'); return }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const win = window.open(url)
+    if (win) {
+      win.onload = () => { win.print() }
+    } else {
+      // 浏览器拦截弹窗时，回退到下载
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `确认书_${appNo}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      ElMessage.warning('弹窗被拦截，已转为下载')
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+  } catch (e) {
+    ElMessage.error('打印失败：' + e.message)
+  }
+}
 
 const downloadPdf = async (appNo) => {
   const token = localStorage.getItem('token')
@@ -134,8 +160,8 @@ onMounted(() => { loadConfirmations() })
   color: #d97706; margin-bottom: 10px; font-size: 14px;
 }
 .balance-header .el-icon { font-size: 16px; }
-.card-footer { padding: 14px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
-.card-footer .el-button { width: 100%; }
+.card-footer { display: flex; gap: 8px; padding: 14px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+.card-footer .el-button { flex: 1; justify-content: center; }
 .empty-state { padding: 60px 0; }
 
 @media (max-width: 768px) {
