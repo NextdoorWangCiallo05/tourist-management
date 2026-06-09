@@ -8,5 +8,9 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://localhost:5000', changeOrigin: true }
     }
+  },
+  test: {
+    environment: 'node',
+    include: ['src/__tests__/unit/**/*.test.js']
   }
 })

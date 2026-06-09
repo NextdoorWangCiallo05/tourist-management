@@ -378,7 +378,7 @@ $env:OPENAI_API_KEY = "sk-xxx"
 | `audit_logs` | 操作日志 | username, action, target_type, target_id, detail |
 | `system_config` | 系统配置 | config_key, config_value |
 
-## 🧪 Pro 亮点
+## 🧪 后续优化
 
 | 亮点 | 说明 |
 |------|------|
@@ -403,4 +403,3 @@ $env:OPENAI_API_KEY = "sk-xxx"
 | **分页** | 申请列表 + 日志列表后端分页 |
 | **代码规范** | ESLint + Flake8 |
 | **示例数据** | 一键 seed_data.py 注入演示数据 |
-| **验收文档** | 70 项测试用例覆盖全部模块 |
