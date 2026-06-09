@@ -51,7 +51,7 @@
           <div class="info-list">
             <div class="info-row"><span class="info-label">Version</span><span class="info-value">v1.0.0</span></div>
             <div class="info-row"><span class="info-label">Frontend</span><span class="info-value">Vue 3 + Vite 5</span></div>
-            <div class="info-row"><span class="info-label">Backend</span><span class="info-value">Flask 2.3</span></div>
+            <div class="info-row"><span class="info-label">Backend</span><span class="info-value">Flask 3.0</span></div>
             <div class="info-row"><span class="info-label">{{ $t('settings.language') }}</span><span class="info-value">{{ settingsStore.locale === 'zh-CN' ? '中文' : 'English' }}</span></div>
             <div class="info-row"><span class="info-label">{{ $t('settings.theme') }}</span><span class="info-value">{{ settingsStore.darkMode ? $t('settings.dark') : $t('settings.light') }}</span></div>
           </div>
